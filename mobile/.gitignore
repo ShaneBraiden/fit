@@ -1,0 +1,9 @@
+node_modules/
+.expo/
+dist/
+web-build/
+android/
+ios/
+apk/
+expo-env.d.ts
+apk-build.log

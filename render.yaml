@@ -1,0 +1,29 @@
+services:
+  # FastAPI + data-mining pipeline. server/data is gitignored, so the pipeline runs at build time (~100 s).
+  - type: web
+    name: fitmine-api
+    runtime: python
+    rootDir: server
+    plan: free
+    buildCommand: pip install -r requirements.txt && python -m fitmine.pipeline run --regenerate --skip-verify
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /docs
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+  # React dashboard (static). Android/mobile folders are not needed here.
+  - type: web
+    name: fitmine-dashboard
+    runtime: static
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        # Set to the fitmine-api URL, e.g. https://fitmine-api.onrender.com (no trailing slash)
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

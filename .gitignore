@@ -1,0 +1,16 @@
+# server
+server/.venv/
+server/data/
+server/artifacts/
+__pycache__/
+.pytest_cache/
+# web
+web/node_modules/
+web/dist/
+# mobile
+mobile/node_modules/
+mobile/.expo/
+mobile/android/
+mobile/ios/
+mobile/apk-build.log
+report/
