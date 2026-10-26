@@ -279,7 +279,7 @@ function ResultView({ res, onDone }: { res: RecordResult; onDone: () => void }) 
   const changed = res.level_before !== res.level_after || res.persona_before !== res.persona_after;
   return (
     <Screen title="Workout saved" subtitle={`${w.title} · ${fmt.date(w.start_time)}`}>
-      <Card style={{ borderLeftWidth: 3, borderLeftColor: v.flagged ? t.critical : t.good }}>
+      <Card>
         <Row style={{ justifyContent: 'space-between' }}>
           <H2>{v.flagged ? 'This one needs a look' : 'All good'}</H2>
           <Pill kind={v.flagged ? 'bad' : 'good'} label={v.flagged ? 'Not counted' : 'Counted'} />

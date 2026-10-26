@@ -27,7 +27,7 @@ export default function Today() {
       {prof.error ? <ErrorState message={prof.error} onRetry={refresh} /> : !p ? <><Skeleton /><Skeleton lines={5} /></> : (
         <>
           {fresh && (
-            <Card style={{ borderLeftWidth: 3, borderLeftColor: t.accent }}>
+            <Card>
               <H2>Record your first workout</H2>
               <P muted small>Your level below is a first guess from your profile. It gets personal once you record a few workouts.</P>
               <View style={{ marginTop: space.md }}>

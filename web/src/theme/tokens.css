@@ -152,7 +152,7 @@ tbody tr:hover { background: var(--accent-wash); }
 .muted { color: var(--muted); }
 .note { color: var(--text-2); font-size: 13px; }
 .error { color: var(--critical-ink); background: var(--surface); border: 1px solid var(--border);
-  border-left: 3px solid var(--critical); padding: 12px 14px; border-radius: 8px; }
+  padding: 12px 14px; border-radius: 8px; }
 .loading { color: var(--muted); padding: 30px; text-align: center; }
 .stale { opacity: 0.55; transition: opacity 0.2s; }
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 13px; }

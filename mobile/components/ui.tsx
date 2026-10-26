@@ -126,7 +126,7 @@ export function Skeleton({ lines = 3 }: { lines?: number }) {
 export function ErrorState({ message, onRetry }: { message: string; onRetry?: () => void }) {
   const t = useTheme();
   return (
-    <Card style={{ borderLeftWidth: 3, borderLeftColor: t.critical }}>
+    <Card>
       <Row gap={space.sm}><Ionicons name="cloud-offline-outline" size={18} color={t.critical} /><P style={{ fontWeight: '600' }}>Something went wrong</P></Row>
       <P muted small style={{ marginTop: 6 }}>{message}</P>
       {onRetry && <View style={{ marginTop: space.md }}><Button label="Try again" kind="secondary" onPress={onRetry} icon="refresh" /></View>}
