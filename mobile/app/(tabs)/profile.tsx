@@ -10,11 +10,10 @@ import { space, useTheme } from '../../lib/theme';
 export default function ProfileTab() {
   const t = useTheme();
   const api = useApi();
-  const { account, setAccount, signOut, token, apiUrl, setApiUrl } = useSession();
+  const { account, setAccount, signOut, token } = useSession();
   const me = useFetch<Account>('/api/me');
   const alerts = useFetch<Alert[]>('/api/me/alerts');
   const [edit, setEdit] = useState(false);
-  const [url, setUrl] = useState(apiUrl);
   const a = me.data ?? account;
   useEffect(() => { if (me.data) setAccount(me.data); }, [me.data, setAccount]);
 
@@ -65,14 +64,6 @@ export default function ProfileTab() {
               </Row>
             </View>
           ))}
-      </Card>
-
-      <Card>
-        <H2>Server</H2>
-        <Field label="Server address" value={url} onChangeText={setUrl} autoCapitalize="none" autoCorrect={false} keyboardType="url" />
-        <View style={{ marginTop: space.sm }}>
-          <Button label="Save server address" kind="secondary" icon="save-outline" onPress={() => setApiUrl(url)} />
-        </View>
       </Card>
 
       {token && <Button label="Sign out" kind="secondary" icon="log-out-outline" onPress={logout} />}

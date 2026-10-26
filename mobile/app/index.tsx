@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 import { Button, Card, Chip, Field, H2, P, Row, Screen } from '../components/ui';
 import { AuthResult, request, SignupRequest } from '../lib/api';
 import { useSession } from '../lib/session';
@@ -10,7 +10,7 @@ import { space, type, useTheme } from '../lib/theme';
 /** Sign in, or create an account with the body measurements the predictions need. */
 export default function Welcome() {
   const t = useTheme();
-  const { ready, token, signIn, apiUrl, setApiUrl } = useSession();
+  const { ready, token, signIn, apiUrl } = useSession();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,8 +23,6 @@ export default function Welcome() {
   const [vo2, setVo2] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showServer, setShowServer] = useState(false);
-  const [url, setUrl] = useState(apiUrl);
 
   if (!ready) return <View style={{ flex: 1, backgroundColor: t.page, justifyContent: 'center' }}><ActivityIndicator color={t.accent} /></View>;
   if (token) return <Redirect href="/(tabs)/today" />;
@@ -106,19 +104,6 @@ export default function Welcome() {
         {error && <P style={{ color: t.criticalInk }}>{error}</P>}
         <Button label={mode === 'login' ? 'Sign in' : 'Create account'} icon={mode === 'login' ? 'log-in-outline' : 'person-add-outline'}
           onPress={submit} busy={busy} />
-
-        <Pressable onPress={() => setShowServer((s) => !s)} accessibilityRole="button" style={{ alignSelf: 'center', padding: 6 }}>
-          <P small muted>{showServer ? 'Hide server settings' : 'Server settings'}</P>
-        </Pressable>
-        {showServer && (
-          <Card>
-            <Row gap={space.sm} style={{ alignItems: 'flex-end' }}>
-              <Field label="Server address" value={url} onChangeText={setUrl} autoCapitalize="none" autoCorrect={false} keyboardType="url"
-                onSubmitEditing={() => setApiUrl(url)} />
-              <Chip label="Use" on onPress={() => setApiUrl(url)} />
-            </Row>
-          </Card>
-        )}
       </Screen>
     </KeyboardAvoidingView>
   );

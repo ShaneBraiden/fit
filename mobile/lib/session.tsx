@@ -7,20 +7,19 @@ import type { components } from './schema';
 type Account = components['schemas']['Account'];
 
 /** Which server to talk to, and who is signed in. The sign-in token is kept in the
- *  device's secure store (Keychain / Keystore); the server address in plain storage. */
+ *  device's secure store (Keychain / Keystore). */
 interface Session {
   ready: boolean;
   apiUrl: string;
   token: string | null;
   account: Account | null;
-  setApiUrl: (u: string) => void;
   signIn: (token: string, account: Account) => void;
   setAccount: (a: Account) => void;
   signOut: () => void;
 }
 
-const DEFAULT_URL = process.env.EXPO_PUBLIC_API_URL
-  ?? (Platform.OS === 'web' ? 'http://localhost:8000' : 'http://10.0.2.2:8000');
+// The app always talks to the hosted FitMine API; EXPO_PUBLIC_API_URL can point a dev build elsewhere.
+const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://fit-m7v5.onrender.com').replace(/\/+$/, '');
 const TOKEN_KEY = 'fitmine.token';
 
 const Ctx = createContext<Session | null>(null);
@@ -43,12 +42,10 @@ function saveToken(value: string | null) {
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [apiUrl, setUrl] = useState(DEFAULT_URL);
   const [token, setToken] = useState<string | null>(null);
   const [account, setAcc] = useState<Account | null>(null);
   useEffect(() => {
-    Promise.all([load('fitmine.apiUrl'), loadToken(), load('fitmine.account')]).then(([u, tk, acc]) => {
-      if (u) setUrl(u);
+    Promise.all([loadToken(), load('fitmine.account')]).then(([tk, acc]) => {
       if (tk) setToken(tk);
       if (tk && acc) { try { setAcc(JSON.parse(acc)); } catch { /* re-fetched on next profile load */ } }
       setReady(true);
@@ -56,12 +53,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
   // Stable callbacks: useApi depends on them, and every fetch re-runs when useApi changes.
   const actions = useMemo(() => ({
-    setApiUrl: (u: string) => { const clean = u.trim().replace(/\/+$/, ''); setUrl(clean); save('fitmine.apiUrl', clean); },
     signIn: (tk: string, acc: Account) => { setToken(tk); setAcc(acc); saveToken(tk); save('fitmine.account', JSON.stringify(acc)); },
     setAccount: (acc: Account) => { setAcc(acc); save('fitmine.account', JSON.stringify(acc)); },
     signOut: () => { setToken(null); setAcc(null); saveToken(null); save('fitmine.account', null); },
   }), []);
-  const value: Session = { ready, apiUrl, token, account, ...actions };
+  const value: Session = { ready, apiUrl: API_URL, token, account, ...actions };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
