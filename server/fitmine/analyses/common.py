@@ -92,6 +92,10 @@ def user_features(users: pd.DataFrame, workouts: pd.DataFrame, weeks: float = C.
     """One row per user: profile attributes plus behaviour aggregated over the history."""
     w = workouts.copy()
     w["start_time"] = pd.to_datetime(w["start_time"])
+    # A live user's columns can be empty or all-null (no heart-rate sensor), which pandas reads as object.
+    for c in ("duration_min", "distance_km", "avg_hr", "max_hr", "pace_min_km"):
+        w[c] = pd.to_numeric(w[c], errors="coerce")
+    users = users.astype({c: float for c in ("age", "bmi", "resting_hr", "vo2max")})
     u = users.set_index("user_id")
     w["hrr"] = (w.avg_hr - u.resting_hr.reindex(w.user_id).to_numpy()) / (
         hrmax_pred(u.age.reindex(w.user_id).to_numpy()) - u.resting_hr.reindex(w.user_id).to_numpy())

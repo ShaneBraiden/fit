@@ -15,7 +15,7 @@ from itertools import product
 
 import numpy as np
 
-from .knn import pairwise_sq
+from .distance import pairwise_sq
 
 
 def _grid_neighbors(X: np.ndarray, eps: float) -> list[np.ndarray]:
@@ -83,13 +83,3 @@ class DBSCAN:
         self.core_sample_mask_ = core
         self.n_clusters_ = cluster
         return self
-
-
-def k_distance(X, k: int, sample: int | None = 3000, seed: int = 0) -> np.ndarray:
-    """Sorted distance of every point to its k-th nearest neighbour (the elbow plot used to pick eps)."""
-    X = np.asarray(X, float)
-    if sample and len(X) > sample:
-        X = X[np.random.default_rng(seed).choice(len(X), sample, replace=False)]
-    from .knn import kneighbors
-    _, d = kneighbors(X, X, k, exclude_self=True)
-    return np.sort(d[:, -1])[::-1]

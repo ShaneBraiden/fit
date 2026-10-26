@@ -59,8 +59,7 @@ export function Pill({ kind, children }: { kind: 'good' | 'bad' | 'warn' | 'neut
 export function ErrorBox({ error }: { error: string }) {
   return (
     <div className="error">
-      <strong>Couldn't load data.</strong> {error}
-      <div className="note">Is the API running? <code>cd server &amp;&amp; uvicorn api.main:app --port 8000</code></div>
+      <strong>Couldn't load this.</strong> {error}
     </div>
   );
 }

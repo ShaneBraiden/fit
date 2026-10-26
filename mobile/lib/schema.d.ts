@@ -4,6 +4,213 @@
  */
 
 export interface paths {
+    "/api/auth/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Signup */
+        post: operations["signup_api_auth_signup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login */
+        post: operations["login_api_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_api_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["me_api_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Me */
+        patch: operations["update_me_api_me_patch"];
+        trace?: never;
+    };
+    "/api/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: operations["catalog_api_catalog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Profile */
+        get: operations["profile_api_me_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/workouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workouts */
+        get: operations["workouts_api_me_workouts_get"];
+        put?: never;
+        /** Record */
+        post: operations["record_api_me_workouts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/workouts/{workout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Workout Detail */
+        get: operations["workout_detail_api_me_workouts__workout_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Workout */
+        delete: operations["delete_workout_api_me_workouts__workout_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recommendations */
+        get: operations["recommendations_api_me_recommendations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Alerts */
+        get: operations["alerts_api_me_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Routes */
+        get: operations["routes_api_me_routes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Model Report */
+        get: operations["model_report_api_models__name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -21,649 +228,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Summary */
-        get: operations["summary_api_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/dataset/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Dataset Summary */
-        get: operations["dataset_summary_api_dataset_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/preprocess/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Preprocess Report */
-        get: operations["preprocess_report_api_preprocess_report_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/olap/meta": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Olap Meta */
-        get: operations["olap_meta_api_olap_meta_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/olap/examples": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Olap Examples */
-        get: operations["olap_examples_api_olap_examples_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/olap/query": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Olap Query */
-        post: operations["olap_query_api_olap_query_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/association/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Association Report */
-        get: operations["association_report_api_association_report_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/association/run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Association Run */
-        post: operations["association_run_api_association_run_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/classify/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Classify Report */
-        get: operations["classify_report_api_classify_report_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/classify/run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Classify Run */
-        post: operations["classify_run_api_classify_run_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/cluster/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Cluster Report */
-        get: operations["cluster_report_api_cluster_report_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/cluster/run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cluster Run */
-        post: operations["cluster_run_api_cluster_run_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/outliers/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Outliers Report */
-        get: operations["outliers_report_api_outliers_report_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/outliers/run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Outliers Run */
-        post: operations["outliers_run_api_outliers_run_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/outliers/workout/{workout_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Outlier Workout */
-        get: operations["outlier_workout_api_outliers_workout__workout_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sequences/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Sequences Report */
-        get: operations["sequences_report_api_sequences_report_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sequences/run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Sequences Run */
-        post: operations["sequences_run_api_sequences_run_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/trajectories/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Trajectories Report */
-        get: operations["trajectories_report_api_trajectories_report_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/trajectories/routes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Trajectories Routes */
-        post: operations["trajectories_routes_api_trajectories_routes_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/trajectories/hotspots": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Trajectories Hotspots */
-        post: operations["trajectories_hotspots_api_trajectories_hotspots_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/trajectories/{workout_id}/segments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Trajectory Segments */
-        get: operations["trajectory_segments_api_trajectories__workout_id__segments_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Verify Report */
-        get: operations["verify_report_api_verify_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Users */
-        get: operations["list_users_api_users_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{user_id}/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Profile */
-        get: operations["profile_api_users__user_id__profile_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{user_id}/workouts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Workouts */
-        get: operations["workouts_api_users__user_id__workouts_get"];
-        put?: never;
-        /** Upload */
-        post: operations["upload_api_users__user_id__workouts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{user_id}/workouts/{workout_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Workout Detail */
-        get: operations["workout_detail_api_users__user_id__workouts__workout_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{user_id}/recommendations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Recommendations */
-        get: operations["recommendations_api_users__user_id__recommendations_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{user_id}/routes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Routes */
-        get: operations["routes_api_users__user_id__routes_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{user_id}/alerts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Alerts */
-        get: operations["alerts_api_users__user_id__alerts_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Account */
+        Account: {
+            /** User Id */
+            user_id: number;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Gender */
+            gender: string;
+            /** Age */
+            age: number;
+            /** Height Cm */
+            height_cm: number;
+            /** Weight Kg */
+            weight_kg: number;
+            /** Bmi */
+            bmi: number;
+            /** Resting Hr */
+            resting_hr: number | null;
+            /** Vo2Max */
+            vo2max: number | null;
+            /** Signup Date */
+            signup_date: string;
+            /** Is Admin */
+            is_admin: boolean;
+        };
         /** Alert */
         Alert: {
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "workout" | "profile";
             /** Workout Id */
-            workout_id: number | null;
+            workout_id: number;
             /** Title */
             title: string;
             /** Detail */
             detail: string;
             /** Start Time */
-            start_time: string | null;
+            start_time: string;
         };
-        /** AssociationRun */
-        AssociationRun: {
-            /**
-             * Algorithm
-             * @default fpgrowth
-             * @enum {string}
-             */
-            algorithm: "apriori" | "fpgrowth";
-            /**
-             * Basket
-             * @default session
-             * @enum {string}
-             */
-            basket: "session" | "user_week";
-            /**
-             * Min Support
-             * @default 0.02
-             */
-            min_support: number;
-            /**
-             * Min Confidence
-             * @default 0.6
-             */
-            min_confidence: number;
-            /**
-             * Min Lift
-             * @default 1
-             */
-            min_lift: number;
+        /** AuthResult */
+        AuthResult: {
+            /** Token */
+            token: string;
+            account: components["schemas"]["Account"];
         };
-        /** ClassifyRun */
-        ClassifyRun: {
+        /** Catalog */
+        Catalog: {
+            /** Activities */
+            activities: string[];
+            /** Gps Activities */
+            gps_activities: string[];
             /**
-             * Model
-             * @default c45
-             * @enum {string}
+             * Exercises
+             * @description exercises offered when logging each activity
              */
-            model: "id3" | "c45" | "cart" | "nb" | "knn";
-            /**
-             * Max Depth
-             * @default 6
-             */
-            max_depth: number;
-            /**
-             * Min Samples Split
-             * @default 10
-             */
-            min_samples_split: number;
-            /**
-             * Prune
-             * @default false
-             */
-            prune: boolean;
-            /**
-             * K
-             * @default 7
-             */
-            k: number;
-            /**
-             * Weights
-             * @default distance
-             * @enum {string}
-             */
-            weights: "uniform" | "distance";
-            /**
-             * Folds
-             * @default 5
-             */
-            folds: number;
-        };
-        /** ClusterRun */
-        ClusterRun: {
-            /**
-             * Algorithm
-             * @default kmeans
-             * @enum {string}
-             */
-            algorithm: "kmeans" | "kmedoids" | "agglomerative" | "dbscan";
-            /**
-             * K
-             * @default 5
-             */
-            k: number;
-            /**
-             * Linkage
-             * @default ward
-             * @enum {string}
-             */
-            linkage: "single" | "complete" | "average" | "ward";
-            /**
-             * Method
-             * @default pam
-             * @enum {string}
-             */
-            method: "pam" | "clara";
-            /**
-             * Eps
-             * @default 1.2
-             */
-            eps: number;
-            /**
-             * Min Samples
-             * @default 10
-             */
-            min_samples: number;
-            /**
-             * N Init
-             * @default 5
-             */
-            n_init: number;
+            exercises: {
+                [key: string]: string[];
+            };
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
-        };
-        /** HotspotRun */
-        HotspotRun: {
-            /**
-             * Eps
-             * @description metres
-             * @default 100
-             */
-            eps: number;
-            /**
-             * Min Samples
-             * @default 60
-             */
-            min_samples: number;
         };
         /** Level */
         Level: {
@@ -678,54 +308,12 @@ export interface components {
                 [key: string]: number;
             };
         };
-        /** OlapQuery */
-        OlapQuery: {
-            /** Spec */
-            spec: {
-                [key: string]: unknown;
-            };
-            /**
-             * Op
-             * @description rollup | drilldown | slice | dice | pivot | clear_filters
-             */
-            op?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /** OutlierRun */
-        OutlierRun: {
-            /**
-             * Method
-             * @default ensemble
-             * @enum {string}
-             */
-            method: "zscore" | "iqr" | "lof" | "iforest" | "rules" | "duplicates" | "ensemble";
-            /**
-             * Z
-             * @default 4
-             */
-            z: number;
-            /**
-             * K
-             * @description IQR fence multiplier
-             * @default 3
-             */
-            k: number;
-            /**
-             * Contamination
-             * @default 0.03
-             */
-            contamination: number;
-            /**
-             * Lof K
-             * @default 20
-             */
-            lof_k: number;
-            /**
-             * N Trees
-             * @default 100
-             */
-            n_trees: number;
+        /** LoginRequest */
+        LoginRequest: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
         };
         /** Persona */
         Persona: {
@@ -746,8 +334,6 @@ export interface components {
             };
             level: components["schemas"]["Level"];
             persona: components["schemas"]["Persona"];
-            /** Similar */
-            similar: components["schemas"]["SimilarUser"][];
             /** Weekly */
             weekly: components["schemas"]["WeekRollup"][];
             /** Routines */
@@ -756,12 +342,30 @@ export interface components {
             stats: {
                 [key: string]: number | null;
             };
-            /** Spoof Flag */
-            spoof_flag: boolean;
-            /** Spoof Reasons */
-            spoof_reasons: string[];
+            /**
+             * Workouts Counted
+             * @description workouts in the last 8 weeks that the predictions use
+             */
+            workouts_counted: number;
             /** Flagged Workouts */
             flagged_workouts: number;
+        };
+        /** ProfileUpdate */
+        ProfileUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Gender */
+            gender?: ("F" | "M") | null;
+            /** Age */
+            age?: number | null;
+            /** Height Cm */
+            height_cm?: number | null;
+            /** Weight Kg */
+            weight_kg?: number | null;
+            /** Resting Hr */
+            resting_hr?: number | null;
+            /** Vo2Max */
+            vo2max?: number | null;
         };
         /** Recommendation */
         Recommendation: {
@@ -776,19 +380,64 @@ export interface components {
             /** Support */
             support: number;
         };
-        /** RouteRun */
-        RouteRun: {
+        /** RecordRequest */
+        RecordRequest: {
             /**
-             * Eps
-             * @description metres
-             * @default 150
+             * Activity
+             * @enum {string}
              */
-            eps: number;
+            activity: "Run" | "Walk" | "Cycle" | "Swim" | "Strength" | "HIIT" | "Yoga";
             /**
-             * Min Samples
-             * @default 8
+             * Start Time
+             * @description local time the workout started; default now
              */
-            min_samples: number;
+            start_time?: string | null;
+            /**
+             * Duration Min
+             * @description moving time
+             */
+            duration_min: number;
+            /**
+             * Kind
+             * @description strength split, if known
+             */
+            kind?: ("push" | "pull" | "legs") | null;
+            /**
+             * Distance Km
+             * @description for workouts without a GPS track
+             */
+            distance_km?: number | null;
+            /** Avg Hr */
+            avg_hr?: number | null;
+            /** Max Hr */
+            max_hr?: number | null;
+            /** Calories */
+            calories?: number | null;
+            /** Exercises */
+            exercises?: string[];
+            /** Title */
+            title?: string | null;
+            /**
+             * Track
+             * @description phone GPS fixes
+             */
+            track?: components["schemas"]["TrackPoint"][] | null;
+        };
+        /** RecordResult */
+        RecordResult: {
+            workout: components["schemas"]["WorkoutItem"];
+            verdict: components["schemas"]["Verdict"];
+            detail: components["schemas"]["WorkoutDetail"];
+            /** Level Before */
+            level_before: string;
+            /** Level After */
+            level_after: string;
+            /** Persona Before */
+            persona_before: string;
+            /** Persona After */
+            persona_after: string;
+            /** Recommendations */
+            recommendations: components["schemas"]["Recommendation"][];
         };
         /** RouteSummary */
         RouteSummary: {
@@ -821,73 +470,52 @@ export interface components {
             /** Phase */
             phase: string;
         };
-        /** SequenceRun */
-        SequenceRun: {
-            /**
-             * Min Support
-             * @default 0.025
-             */
-            min_support: number;
-            /**
-             * Max Gap
-             * @default 4
-             */
-            max_gap: number | null;
-        };
-        /** SimilarUser */
-        SimilarUser: {
-            /** User Id */
-            user_id: number;
+        /** SignupRequest */
+        SignupRequest: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
             /** Name */
             name: string;
-            /** Persona */
-            persona: string;
+            /**
+             * Gender
+             * @enum {string}
+             */
+            gender: "F" | "M";
+            /** Age */
+            age: number;
+            /** Height Cm */
+            height_cm: number;
+            /** Weight Kg */
+            weight_kg: number;
+            /**
+             * Resting Hr
+             * @description optional, bpm
+             */
+            resting_hr?: number | null;
+            /**
+             * Vo2Max
+             * @description optional, from a watch or a lab test
+             */
+            vo2max?: number | null;
         };
-        /** UploadRequest */
-        UploadRequest: {
+        /** TrackPoint */
+        TrackPoint: {
             /**
-             * Activity
-             * @default Run
-             * @enum {string}
+             * T
+             * @description milliseconds since the epoch
              */
-            activity: "Run" | "Walk" | "Cycle" | "Swim" | "Strength" | "HIIT" | "Yoga";
+            t: number;
+            /** Lat */
+            lat: number;
+            /** Lon */
+            lon: number;
             /**
-             * Kind
-             * @default easy
-             * @enum {string}
+             * Accuracy
+             * @description metres
              */
-            kind: "easy" | "intervals" | "tempo" | "long" | "push" | "pull" | "legs";
-            /**
-             * Route
-             * @default popular
-             * @enum {string}
-             */
-            route: "popular" | "personal";
-            /**
-             * Faults
-             * @default []
-             */
-            faults: ("hr_spike" | "hr_flatline" | "hr_dropout" | "gps_teleport" | "car_speed" | "calorie_mismatch")[];
-            /** Exercises */
-            exercises?: string[] | null;
-            /** Title */
-            title?: string | null;
-        };
-        /** UploadResult */
-        UploadResult: {
-            workout: components["schemas"]["WorkoutItem"];
-            verdict: components["schemas"]["Verdict"];
-            detail: components["schemas"]["WorkoutDetail"];
-            /** Level Before */
-            level_before: string;
-            /** Level After */
-            level_after: string;
-            /** Persona Before */
-            persona_before: string;
-            /** Persona After */
-            persona_after: string;
-            /** Recommendations */
-            recommendations: components["schemas"]["Recommendation"][];
+            accuracy?: number | null;
         };
         /** UserRoutes */
         UserRoutes: {
@@ -895,27 +523,6 @@ export interface components {
             popular: components["schemas"]["RouteSummary"][];
             /** Workouts */
             workouts: components["schemas"]["WorkoutItem"][];
-        };
-        /** UserSummary */
-        UserSummary: {
-            /** User Id */
-            user_id: number;
-            /** Name */
-            name: string;
-            /** Gender */
-            gender: string;
-            /** Age */
-            age: number;
-            /** Home Zone */
-            home_zone: string;
-            /** Level */
-            level: string;
-            /** Level Source */
-            level_source: string;
-            /** Persona */
-            persona: string;
-            /** Flagged */
-            flagged: boolean;
         };
         /** ValidationError */
         ValidationError: {
@@ -936,18 +543,6 @@ export interface components {
             flagged: boolean;
             /** Reasons */
             reasons: string[];
-            /** Detectors */
-            detectors: {
-                [key: string]: boolean;
-            };
-            /** Scores */
-            scores: {
-                [key: string]: number;
-            };
-            /** Features */
-            features: {
-                [key: string]: number | null;
-            };
         };
         /** WeekRollup */
         WeekRollup: {
@@ -1028,127 +623,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    health_api_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    summary_api_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    dataset_summary_api_dataset_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    preprocess_report_api_preprocess_report_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    olap_meta_api_olap_meta_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    olap_examples_api_olap_examples_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    olap_query_api_olap_query_post: {
+    signup_api_auth_signup_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1157,7 +632,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OlapQuery"];
+                "application/json": components["schemas"]["SignupRequest"];
             };
         };
         responses: {
@@ -1167,7 +642,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["AuthResult"];
                 };
             };
             /** @description Validation Error */
@@ -1181,27 +656,7 @@ export interface operations {
             };
         };
     };
-    association_report_api_association_report_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    association_run_api_association_run_post: {
+    login_api_auth_login_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1210,7 +665,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AssociationRun"];
+                "application/json": components["schemas"]["LoginRequest"];
             };
         };
         responses: {
@@ -1220,7 +675,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["AuthResult"];
                 };
             };
             /** @description Validation Error */
@@ -1234,10 +689,41 @@ export interface operations {
             };
         };
     };
-    classify_report_api_classify_report_get: {
+    logout_api_auth_logout_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_api_me_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1249,21 +735,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    classify_run_api_classify_run_post: {
+    update_me_api_me_patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ClassifyRun"];
+                "application/json": components["schemas"]["ProfileUpdate"];
             };
         };
         responses: {
@@ -1273,7 +770,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Account"];
                 };
             };
             /** @description Validation Error */
@@ -1287,7 +784,7 @@ export interface operations {
             };
         };
     };
-    cluster_report_api_cluster_report_get: {
+    catalog_api_catalog_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1302,360 +799,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Catalog"];
                 };
             };
         };
     };
-    cluster_run_api_cluster_run_post: {
+    profile_api_me_profile_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClusterRun"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    outliers_report_api_outliers_report_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    outliers_run_api_outliers_run_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OutlierRun"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    outlier_workout_api_outliers_workout__workout_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workout_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    sequences_report_api_sequences_report_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    sequences_run_api_sequences_run_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SequenceRun"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    trajectories_report_api_trajectories_report_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    trajectories_routes_api_trajectories_routes_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RouteRun"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    trajectories_hotspots_api_trajectories_hotspots_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HotspotRun"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    trajectory_segments_api_trajectories__workout_id__segments_get: {
-        parameters: {
-            query?: {
-                beta?: number;
-            };
-            header?: never;
-            path: {
-                workout_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    verify_report_api_verify_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    list_users_api_users_get: {
-        parameters: {
-            query?: {
-                query?: string;
-                limit?: number;
-                featured?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserSummary"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    profile_api_users__user_id__profile_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
             cookie?: never;
         };
         requestBody?: never;
@@ -1680,15 +835,15 @@ export interface operations {
             };
         };
     };
-    workouts_api_users__user_id__workouts_get: {
+    workouts_api_me_workouts_get: {
         parameters: {
             query?: {
                 limit?: number;
             };
-            header?: never;
-            path: {
-                user_id: number;
+            header?: {
+                authorization?: string | null;
             };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -1713,18 +868,18 @@ export interface operations {
             };
         };
     };
-    upload_api_users__user_id__workouts_post: {
+    record_api_me_workouts_post: {
         parameters: {
             query?: never;
-            header?: never;
-            path: {
-                user_id: number;
+            header?: {
+                authorization?: string | null;
             };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UploadRequest"];
+                "application/json": components["schemas"]["RecordRequest"];
             };
         };
         responses: {
@@ -1734,7 +889,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadResult"];
+                    "application/json": components["schemas"]["RecordResult"];
                 };
             };
             /** @description Validation Error */
@@ -1748,12 +903,13 @@ export interface operations {
             };
         };
     };
-    workout_detail_api_users__user_id__workouts__workout_id__get: {
+    workout_detail_api_me_workouts__workout_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
-                user_id: number;
                 workout_id: number;
             };
             cookie?: never;
@@ -1780,13 +936,44 @@ export interface operations {
             };
         };
     };
-    recommendations_api_users__user_id__recommendations_get: {
+    delete_workout_api_me_workouts__workout_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
-            path: {
-                user_id: number;
+            header?: {
+                authorization?: string | null;
             };
+            path: {
+                workout_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recommendations_api_me_recommendations_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -1811,13 +998,44 @@ export interface operations {
             };
         };
     };
-    routes_api_users__user_id__routes_get: {
+    alerts_api_me_alerts_get: {
         parameters: {
             query?: never;
-            header?: never;
-            path: {
-                user_id: number;
+            header?: {
+                authorization?: string | null;
             };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Alert"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    routes_api_me_routes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -1842,12 +1060,14 @@ export interface operations {
             };
         };
     };
-    alerts_api_users__user_id__alerts_get: {
+    model_report_api_models__name__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
-                user_id: number;
+                name: string;
             };
             cookie?: never;
         };
@@ -1859,7 +1079,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Alert"][];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -1869,6 +1089,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    health_api_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

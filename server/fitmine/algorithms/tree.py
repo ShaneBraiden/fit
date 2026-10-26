@@ -1,11 +1,7 @@
-"""Decision tree induction: ID3, C4.5 and CART in one learner.
-
-  id3   information gain, multiway splits, categorical attributes only
-  c45   gain ratio; multiway on categorical, binary threshold on numeric
-  cart  Gini index, binary splits everywhere (numeric threshold, or one-vs-rest category)
-
-Stopping (pre-pruning): max_depth, min_samples_split, min_gain.
-Post-pruning: reduced-error pruning against a held-out validation set.
+"""C4.5 decision tree (Quinlan 1993): the split with the highest gain ratio wins;
+binary threshold splits on numeric attributes, multiway splits on categorical ones.
+Missing values give no information when a split is chosen and follow the larger
+branch at prediction time. Stopping: max_depth, min_samples_split, min_gain.
 """
 from __future__ import annotations
 
@@ -19,17 +15,8 @@ def _entropy(counts: np.ndarray) -> np.ndarray:
     return -(p * np.log2(p, out=np.zeros(p.shape), where=p > 0)).sum(-1)
 
 
-def _gini(counts: np.ndarray) -> np.ndarray:
-    tot = counts.sum(-1, keepdims=True)
-    p = np.divide(counts, tot, out=np.zeros(counts.shape), where=tot > 0)
-    return 1 - (p ** 2).sum(-1)
-
-
 class DecisionTree:
-    def __init__(self, algorithm: str = "c45", max_depth: int = 6, min_samples_split: int = 10,
-                 min_gain: float = 1e-4):
-        assert algorithm in ("id3", "c45", "cart")
-        self.algorithm = algorithm
+    def __init__(self, max_depth: int = 6, min_samples_split: int = 10, min_gain: float = 1e-4):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_gain = min_gain
@@ -38,8 +25,6 @@ class DecisionTree:
     def fit(self, X: pd.DataFrame, y):
         self.features = list(X.columns)
         self.numeric = {c: pd.api.types.is_numeric_dtype(X[c]) for c in self.features}
-        if self.algorithm == "id3" and any(self.numeric.values()):
-            raise ValueError("ID3 needs categorical attributes; discretise numeric columns first")
         self.classes_ = np.array(sorted(pd.unique(np.asarray(y))))
         yi = np.searchsorted(self.classes_, np.asarray(y))
         self._cols = {c: (X[c].to_numpy(dtype=float) if self.numeric[c] else X[c].astype(str).to_numpy())
@@ -52,7 +37,7 @@ class DecisionTree:
         return self
 
     def _impurity(self, counts):
-        return _gini(counts) if self.algorithm == "cart" else _entropy(counts)
+        return _entropy(counts)
 
     def _counts(self, yi):
         return np.bincount(yi, minlength=len(self.classes_)).astype(float)
@@ -83,11 +68,6 @@ class DecisionTree:
             left, right = idx[col <= best["threshold"]], idx[~(col <= best["threshold"])]
             node["children"] = [("<= %.4g" % best["threshold"], self._grow(left, yi, depth + 1)),
                                 ("> %.4g" % best["threshold"], self._grow(right, yi, depth + 1))]
-        elif best["kind"] == "category":  # CART one-vs-rest
-            node["value"] = best["value"]
-            col = self._cols[best["feature"]][idx]
-            node["children"] = [(f"= {best['value']}", self._grow(idx[col == best["value"]], yi, depth + 1)),
-                                (f"!= {best['value']}", self._grow(idx[col != best["value"]], yi, depth + 1))]
         else:  # multiway
             col = self._cols[best["feature"]][idx]
             node["children"] = [(f"= {v}", self._grow(idx[col == v], yi, depth + 1)) for v in best["values"]]
@@ -117,11 +97,9 @@ class DecisionTree:
             gain = np.where(valid, gain, -np.inf)
             j = int(np.argmax(gain))
             g = float(gain[j]) * m / n  # rows with missing values give no information
-            score = g
-            if self.algorithm == "c45":
-                p = np.array([nl[j], m - nl[j]]) / m
-                split_info = float(-(p * np.log2(p)).sum())
-                score = g / split_info if split_info > 0 else 0.0
+            p = np.array([nl[j], m - nl[j]]) / m
+            split_info = float(-(p * np.log2(p)).sum())
+            score = g / split_info if split_info > 0 else 0.0
             return {"feature": f, "kind": "threshold", "threshold": float((xs[j] + xs[j + 1]) / 2),
                     "gain": g, "score": score}
         values = np.unique(col)
@@ -129,22 +107,11 @@ class DecisionTree:
             return None
         counts = np.array([np.bincount(y[col == v], minlength=k) for v in values], dtype=float)
         sizes = counts.sum(1)
-        if self.algorithm == "cart":
-            best = None
-            for i, v in enumerate(values):
-                l, r = counts[i], counts.sum(0) - counts[i]
-                child = (sizes[i] * self._impurity(l) + (n - sizes[i]) * self._impurity(r)) / n
-                g = parent - float(child)
-                if best is None or g > best["gain"]:
-                    best = {"feature": f, "kind": "category", "value": str(v), "gain": g, "score": g}
-            return best
         child = float((sizes * self._impurity(counts)).sum() / n)
         g = parent - child
-        score = g
-        if self.algorithm == "c45":
-            p = sizes / n
-            split_info = float(-(p * np.log2(p)).sum())
-            score = g / split_info if split_info > 0 else 0.0
+        p = sizes / n
+        split_info = float(-(p * np.log2(p)).sum())
+        score = g / split_info if split_info > 0 else 0.0
         return {"feature": f, "kind": "multiway", "values": [str(v) for v in values], "gain": g, "score": score}
 
     # ---------------------------------------------------------------- prediction
@@ -157,8 +124,6 @@ class DecisionTree:
                     node = max((c for _, c in node["children"]), key=lambda c: c["n"])
                 else:
                     node = node["children"][0][1] if v <= node["threshold"] else node["children"][1][1]
-            elif node["kind"] == "category":
-                node = node["children"][0][1] if str(v) == node["value"] else node["children"][1][1]
             else:
                 nxt = next((c for lab, c in node["children"] if lab == f"= {v}"), None)
                 if nxt is None:  # unseen category: stop here
@@ -175,51 +140,6 @@ class DecisionTree:
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         return self.classes_[self.predict_proba(X).argmax(1)]
-
-    # ---------------------------------------------------------------- post-pruning
-    def prune(self, X_val: pd.DataFrame, y_val) -> int:
-        """Reduced-error pruning: bottom-up, replace a subtree by a leaf whenever that does
-        not increase validation errors. Returns the number of subtrees pruned."""
-        yv = np.searchsorted(self.classes_, np.asarray(y_val))
-        rows = X_val.to_dict("records")
-        pruned = [0]
-
-        def errors_as_leaf(node, idx):
-            return int((yv[idx] != node["cls"]).sum())
-
-        def walk(node, idx):
-            if node["leaf"]:
-                return int((yv[idx] != node["cls"]).sum())
-            groups = {i: [] for i in range(len(node["children"]))}
-            for i in idx:
-                child = self._route_one(node, rows[i])
-                if child is not None:
-                    groups[child].append(i)
-            sub_err = sum(walk(c, np.array(groups[i], dtype=int)) for i, (_, c) in enumerate(node["children"]))
-            leaf_err = errors_as_leaf(node, idx)
-            if leaf_err <= sub_err:
-                for key in ("feature", "kind", "threshold", "value", "values", "children", "gain", "score"):
-                    node.pop(key, None)
-                node["leaf"] = True
-                pruned[0] += 1
-                return leaf_err
-            return sub_err
-
-        walk(self.root, np.arange(len(rows)))
-        return pruned[0]
-
-    def _route_one(self, node, row):
-        v = row[node["feature"]]
-        if node["kind"] == "threshold":
-            if v is None or (isinstance(v, float) and np.isnan(v)):
-                return int(np.argmax([c["n"] for _, c in node["children"]]))
-            return 0 if v <= node["threshold"] else 1
-        if node["kind"] == "category":
-            return 0 if str(v) == node["value"] else 1
-        for i, (lab, _) in enumerate(node["children"]):
-            if lab == f"= {v}":
-                return i
-        return None
 
     # ---------------------------------------------------------------- export
     def to_dict(self, max_depth: int | None = None) -> dict:

@@ -3,11 +3,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from mlxtend.frequent_patterns import apriori as mx_apriori
 from mlxtend.frequent_patterns import association_rules as mx_rules
 from mlxtend.frequent_patterns import fpgrowth as mx_fpgrowth
 
-from fitmine.algorithms.apriori import apriori
 from fitmine.algorithms.fpgrowth import fpgrowth
 from fitmine.algorithms.rules import closed_and_maximal, generate_rules
 
@@ -22,23 +20,14 @@ EXPECTED_COUNTS = {
 }
 
 
-@pytest.mark.parametrize("algo", [apriori, fpgrowth])
-def test_textbook_itemsets(algo):
-    itemsets, _ = algo(ALL_ELECTRONICS, 2 / 9)
+def test_textbook_itemsets():
+    itemsets, _ = fpgrowth(ALL_ELECTRONICS, 2 / 9)
     got = {tuple(sorted(k)): round(v * 9) for k, v in itemsets.items()}
     assert got == EXPECTED_COUNTS
 
 
-def test_apriori_level_stats():
-    _, stats = apriori(ALL_ELECTRONICS, 2 / 9)
-    # Textbook: C3 after the join is {I1,I2,I3},{I1,I2,I5},{I1,I3,I5},{I2,I3,I4},{I2,I3,I5},{I2,I4,I5};
-    # pruning by the Apriori property leaves the two frequent ones.
-    k3 = next(s for s in stats if s["k"] == 3)
-    assert k3["candidates"] == 6 and k3["counted"] == 2 and k3["frequent"] == 2
-
-
 def test_rule_confidence_textbook():
-    itemsets, _ = apriori(ALL_ELECTRONICS, 2 / 9)
+    itemsets, _ = fpgrowth(ALL_ELECTRONICS, 2 / 9)
     rules = generate_rules(itemsets, 0.7)
     found = {(tuple(r["antecedent"]), tuple(r["consequent"])): r["confidence"] for r in rules}
     # {I1,I5} -> I2, {I2,I5} -> I1 and I5 -> {I1,I2} all have 100% confidence (H&K Example 6.4)
@@ -65,11 +54,10 @@ def _onehot(tx):
     return pd.DataFrame([[i in t for i in items] for t in tx], columns=items)
 
 
-@pytest.mark.parametrize("ours,theirs", [(apriori, mx_apriori), (fpgrowth, mx_fpgrowth)])
-def test_parity_with_mlxtend(ours, theirs):
+def test_parity_with_mlxtend():
     tx = _random_baskets()
-    mine, _ = ours(tx, 0.05)
-    ref = theirs(_onehot(tx), min_support=0.05, use_colnames=True)
+    mine, _ = fpgrowth(tx, 0.05)
+    ref = mx_fpgrowth(_onehot(tx), min_support=0.05, use_colnames=True)
     ref = {frozenset(r.itemsets): r.support for r in ref.itertuples()}
     assert set(mine) == set(ref)
     for k in ref:
@@ -90,7 +78,7 @@ def test_rules_parity_with_mlxtend():
 
 
 def test_closed_and_maximal():
-    itemsets, _ = apriori(ALL_ELECTRONICS, 2 / 9)
+    itemsets, _ = fpgrowth(ALL_ELECTRONICS, 2 / 9)
     closed, maximal = closed_and_maximal(itemsets)
     assert frozenset({"I1", "I2", "I5"}) in maximal
     assert frozenset({"I5"}) not in closed  # {I1,I2,I5} has the same support (2)

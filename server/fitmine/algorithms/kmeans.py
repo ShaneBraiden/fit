@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .knn import pairwise_sq
+from .distance import pairwise_sq
 
 
 def kmeans_pp(X: np.ndarray, k: int, rng) -> np.ndarray:

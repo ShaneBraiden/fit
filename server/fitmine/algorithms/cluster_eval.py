@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from .knn import pairwise_sq
+from .distance import pairwise_sq
 
 
 def sse(X, labels) -> float:

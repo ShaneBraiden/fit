@@ -1,11 +1,9 @@
 """GSP sequential patterns, trajectory primitives and OLAP operations."""
 import numpy as np
-import pandas as pd
 import pytest
 
 from fitmine.algorithms import trajectory as T
 from fitmine.algorithms.gsp import contains, gsp
-from fitmine.algorithms.olap import Cube
 
 DB = [
     [(1, ["a"]), (2, ["b"]), (10, ["c"])],
@@ -69,15 +67,6 @@ def test_gsp_complete_against_brute_force():
         assert set(pats) == set(brute), max_gap
 
 
-def test_douglas_peucker_keeps_corners():
-    x = np.linspace(0, 100, 101)
-    y = np.zeros_like(x)
-    y[50] = 30  # spike
-    keep = T.douglas_peucker(np.column_stack([x, y]), 5.0)
-    assert {0, 50, 100} <= set(keep.tolist())
-    assert len(keep) <= 5
-
-
 def test_binary_segmentation_recovers_change_points():
     rng = np.random.default_rng(1)
     x = np.r_[np.full(40, 2.0), np.full(30, 3.5), np.full(50, 2.2)] + rng.normal(0, 0.15, 120)
@@ -93,33 +82,3 @@ def test_hausdorff_matrix_symmetric_and_resample():
     H = T.hausdorff_matrix(tracks)
     assert H[0, 2] == pytest.approx(0) and H[0, 1] == pytest.approx(30)
     assert np.allclose(H, H.T)
-
-
-def test_olap_operations():
-    rng = np.random.default_rng(2)
-    base = pd.DataFrame({
-        "day": rng.choice(["2026-09-01", "2026-09-15", "2026-10-03"], 200),
-        "activity": rng.choice(["Run", "Yoga", "Strength"], 200),
-        "gender": rng.choice(["F", "M"], 200), "calories": rng.uniform(100, 600, 200),
-    })
-    base["month"] = base.day.str[:7]
-    base["category"] = base.activity.map({"Run": "Cardio", "Yoga": "Mind-Body", "Strength": "Strength"})
-    cube = Cube(base, {"date": ["day", "month"], "activity": ["activity", "category"], "user": ["gender"]},
-                ["calories"])
-    spec = {"rows": [{"dim": "date", "level": "day"}], "cols": [{"dim": "activity", "level": "activity"}],
-            "measure": "calories", "agg": "sum", "filters": []}
-    r = cube.query(spec)
-    assert r["grand_total"] == pytest.approx(round(base.calories.sum(), 2))
-    up = cube.rollup(spec, "date")
-    assert up["rows"][0]["level"] == "month"
-    r2 = cube.query(up)
-    assert len(r2["row_headers"]) == 2
-    assert sum(r2["row_totals"]) == pytest.approx(r2["grand_total"], abs=0.05)
-    down = cube.drilldown(up, "date")
-    assert down["rows"][0]["level"] == "day"
-    sl = cube.slice(spec, "user", "gender", "F")
-    assert cube.query(sl)["n_facts"] == (base.gender == "F").sum()
-    d = cube.dice(spec, [{"dim": "activity", "level": "activity", "values": ["Run", "Yoga"]}])
-    assert cube.query(d)["n_facts"] == base.activity.isin(["Run", "Yoga"]).sum()
-    assert len(cube.lattice([("date", "month"), ("activity", "activity"), ("user", "gender")], "calories")) == 8
-    assert "GROUP BY day, activity" in r["sql"]

@@ -1,56 +1,44 @@
-# FitMine: smart-fitness workout analytics
+# FitMine: fitness tracking with data-mined predictions
 
-A data mining project built around a Strava/Fitbit-style workout tracker. It mines workout logs to find:
+Users sign up, record workouts on their phone (GPS tracking for runs, walks and rides, or a manual log for gym, HIIT, yoga and swims) or on the web, and see predictions built from their own data:
 
-- which exercises people do together
-- each user's fitness level and training persona
-- popular running routes and the phases inside each run
-- faulty sensors and spoofed profiles
+- **Fitness level** (Beginner to Elite) from their profile and last 8 weeks of workouts
+- **Training style** (runner, lifter, yogi, …) from their mix of workouts
+- **Try next**: exercises people usually add to the ones they just did
+- **Weekly routine**: the order of workouts they repeat
+- **Data checks**: GPS glitches, impossible speeds and copied recordings are flagged and left out of their stats
+- **Routes**: popular routes near them, and the phases (warm-up, fast, recovery…) inside each run
 
 It has three parts:
 
 | Part | Folder | What it is |
 |---|---|---|
-| **Server** | `server/` | Python 3.11. A synthetic data generator, every mining algorithm written from scratch in NumPy, a pipeline that runs all seven syllabus units, and a FastAPI API. |
-| **Web dashboard** | `web/` | React + ECharts + Leaflet. The analyst view, with one page per syllabus unit. Every page has live re-runs with your own parameters. |
-| **Mobile app** | `mobile/` | Expo React Native. The end-user view. It applies the mined models to one user, and to every new workout you record. |
+| **Server** | `server/` | Python 3.11. Accounts and token auth, the user's own workouts, the model-training pipeline (every algorithm written from scratch in NumPy) and a FastAPI API. |
+| **Web app** | `web/` | React + ECharts + Leaflet. Sign in, the same screens as the phone, and admin-only "How the models work" pages. |
+| **Mobile app** | `mobile/` | Expo React Native. Sign in, live GPS recording, manual logging, and the predictions. |
 
-The data is synthetic, and every pattern the mining should find was **planted** on purpose: the exercise templates, the personas, the fitness levels, the routes, the run phases, the sensor faults and the spoofed accounts. That makes each result measurable, not just plausible. The planted answers sit in `gt_*` tables and in `meta.planted`. Only the evaluation code reads them; the mining never does.
+## One algorithm per feature
 
-## Syllabus map
+The models are trained on a synthetic population (1,010 users, about 28,000 workouts over 8 weeks) whose patterns were planted on purpose, so every model can be scored against the known answer. They are then applied to each real user's own workouts.
 
-| Unit | What is mined | Algorithms (all in `server/fitmine/algorithms/`) | Web page | Mobile app |
-|---|---|---|---|---|
-| **U1** Preprocessing | Raw export with missing HR/calories, duplicate re-syncs, lb/mi units and 31 spellings of 7 activities | kNN / class-mean / MET imputation (chosen by RMSE against hidden truth), equal-depth smoothing, min-max / z-score / decimal scaling, equal-width / equal-frequency / entropy-MDL discretisation, Pearson, χ², PCA, SRSWOR vs stratified sampling | Preprocessing | – |
-| **U2** Warehouse & OLAP | Star schema (`fact_workout` and 5 dimensions) with concept hierarchies | Cube with roll-up, drill-down, slice, dice and pivot; cuboid lattice; generated SQL | Warehouse & OLAP | Weekly roll-up chart on Today |
-| **U3** Association rules | Exercises per workout; session types per user-week | Apriori (join, prune, hash counting), FP-Growth (FP-tree, conditional trees), rules with support, confidence, lift, leverage and conviction; closed and maximal itemsets | Association rules | "Try next" suggestions |
-| **U4** Classification | Fitness level (Beginner to Elite) from profile and behaviour | ID3, C4.5 (gain ratio), CART (Gini) with reduced-error pruning, Naive Bayes, k-NN; stratified k-fold, confusion matrix, ROC/AUC | Classification | Level badge with class probabilities |
-| **U5** Clustering | Training personas from behaviour alone | k-means++, PAM / CLARA, agglomerative (Lance-Williams), DBSCAN; SSE / elbow, silhouette, Davies-Bouldin, ARI, NMI, purity | Clustering | Persona, distances, similar users |
-| **U6** Outlier detection | Faulty HR straps, GPS teleports, car-speed "runs", replayed files, calorie fraud, fake ages / bodies / VO2max, cloned accounts | z-score, IQR, Grubbs, LOF, Isolation Forest, domain rules, stream fingerprints, regression-residual consistency checks, ensemble | Outlier detection | Verdict on every upload; data-check alerts |
-| **U7** Advanced | Weekly routines; GPS tracks | GSP with a max-gap constraint; DBSCAN hotspots on a grid index; Hausdorff route clustering; Douglas-Peucker; change-point segmentation of speed | Sequences & routes | Routine, route matching, run phases |
+| Feature | Algorithm (all in `server/fitmine/algorithms/`) | Score on the planted truth (seed 42) |
+|---|---|---|
+| Data cleaning | Rule-based label/unit fixes, re-sync duplicate detection, **kNN imputation** (k = 5) | 280 / 280 duplicates; HR imputation RMSE 3.9 bpm (mean baseline 19.4) |
+| Try next | **FP-Growth** + association rules (support ≥ 2%, confidence ≥ 60%) | 8 / 8 planted rules |
+| Fitness level | **C4.5** decision tree (gain ratio, depth ≤ 6) | CV accuracy 71.7% (baseline 40.6%), macro-F1 0.677; 72.7% on unassessed users |
+| Training style | **k-means** with k-means++ seeding (k = 5) | ARI 0.869 vs the 5 planted personas |
+| Data checks | Domain rules + stream fingerprints + **IQR fences** and **Isolation Forest** agreeing | 93.9% precision / 99.8% recall on faulty workouts; 22 / 22 spoofed profiles |
+| Weekly routine | **GSP** sequential patterns (max gap 4 days) | 4 / 4 planted routines |
+| Popular routes | **DBSCAN** on **Hausdorff** distances between tracks | 8 / 8 planted routes |
+| Run phases | Binary-segmentation **change-point** detection on speed | boundary F1 0.865 |
 
-Every from-scratch algorithm is cross-checked against scikit-learn, SciPy or mlxtend (or exhaustive search). See the **Verification** page and `pytest`.
+Every from-scratch algorithm is cross-checked against scikit-learn, SciPy or mlxtend (11 / 11 pass); see the web app's Verification page and `pytest`.
 
-## Results (seed 42)
-
-| Check against planted truth | Result |
-|---|---|
-| U1 duplicate uploads found | 280 / 280 (precision and recall 100%) |
-| U1 avg-HR imputation RMSE | 3.9 bpm (kNN), vs 19.4 bpm for mean imputation |
-| U3 planted exercise rules recovered | 8 / 8 |
-| U4 fitness level (C4.5): CV macro-F1 / accuracy on unassessed users vs hidden level | 0.68 / 72.7% (labels carry ~10% noise) |
-| U5 k-means ARI vs the 5 planted personas | 0.87 |
-| U6 workout faults (ensemble): precision / recall | 90.7% / 99.8% |
-| U6 spoofed profiles: precision / recall | 100% / 100% (22 accounts) |
-| U7 planted weekly routines / popular routes found | 4 / 4 and 8 / 8 |
-| U7 run segmentation, change-point F1 | 0.86 |
-| Library cross-checks passed | 23 / 23 |
-
-The full pipeline takes about 100 s on a laptop.
+**How a real user's predictions are made.** The server keeps each user's workouts in its own tables. On every profile request it takes the user's workouts from the last 8 weeks that passed the data checks, builds the same features the models were trained on (sessions and minutes per week, activity mix, intensity, run pace, longest distance), and runs the trained C4.5 tree and the nearest k-means centre on them. Weekly figures are divided by the weeks the account has existed (1 to 8), so a new user is not penalised. VO2max is the user's own value if they enter one, otherwise estimated from their best recent run (Daniels' VDOT), otherwise from their resting heart rate (Uth's ratio).
 
 ## Running it (Windows)
 
-### 1. Server and mining pipeline
+### 1. Server
 
 ```bash
 cd server
@@ -60,27 +48,30 @@ python -m venv .venv
 .venv\Scripts\python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
-- **Database:** Supabase (Postgres) when `DATABASE_URL` is set, otherwise a local SQLite file (`server/data/fitmine.db`). See [Supabase](#supabase) below.
-- **Pipeline options:** `--seed`, `--users` and `--skip-verify`.
+- **Database:** Supabase (Postgres) when `DATABASE_URL` is set, otherwise a local SQLite file (`server/data/fitmine.db`). See [Supabase](#supabase).
+- **Admins:** set `ADMIN_EMAILS` (comma-separated) in `server/.env` or on Render. Accounts with those emails see the model pages on the web.
+- **Pipeline options:** `--seed`, `--users` and `--skip-verify`. A full run takes about 3 minutes.
 - **API docs:** http://localhost:8000/docs
-- **Tests:** `.venv\Scripts\python -m pytest tests` runs textbook examples plus parity with the libraries. The API tests need the pipeline to have run first.
-- **App uploads:** re-running the pipeline rebuilds the clean tables from the raw export, so workouts recorded in the app are discarded.
+- **Tests:** `.venv\Scripts\python -m pytest tests`. They always use the local SQLite file, never `DATABASE_URL`; the API tests need the pipeline to have run first.
+- **What the pipeline rebuilds:** only the synthetic training tables. Accounts and the workouts users record (`accounts`, `auth_tokens`, `live_users`, `live_workouts`, `live_exercises`, `live_streams`) are never touched.
+
+### Accounts and security
+
+- Passwords are hashed with scrypt (random salt per password). Sign-in returns a random token; the server stores only its SHA-256 and it expires after 90 days. Sign-out revokes it.
+- Every `/api/me/*` request needs `Authorization: Bearer <token>`, and the token alone decides whose data is read or written.
+- Ten failed sign-ins for one email within 15 minutes are refused for the rest of that window.
+- The phone keeps the token in the device's secure store (Keychain / Keystore); the web app keeps it in `localStorage`.
 
 ### Supabase
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **Connect** and copy the **Session pooler** URI. The direct connection is IPv6-only and the transaction pooler (port 6543) drops session settings, so use the session pooler (port 5432).
-3. Put it in `server/.env` (gitignored), filling in your database password:
+2. Open **Connect** and copy the **Session pooler** URI (port 5432).
+3. Put it in `server/.env` (gitignored): `DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres`
+4. Run the pipeline. It creates every table in a `fitmine` schema (set `DB_SCHEMA` to change it), which Supabase's public REST API doesn't expose.
 
-   ```
-   DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
-   ```
+On Render, set `DATABASE_URL` and `ADMIN_EMAILS` on the `fitmine-api` service.
 
-4. Run the pipeline as above. It creates every table in a `fitmine` schema (set `DB_SCHEMA` to change it). That schema is not exposed through Supabase's public REST API, so the anon key can't read the data.
-
-On Render, set `DATABASE_URL` on the `fitmine-api` service. Workouts recorded in the app then persist across restarts; a redeploy re-runs the pipeline and rebuilds the tables.
-
-### 2. Web dashboard
+### 2. Web app
 
 ```bash
 cd web
@@ -88,8 +79,9 @@ npm install
 npm run dev
 ```
 
-- **Open:** http://localhost:5173
-- **API address:** set `VITE_API_URL` if the API is not on `localhost:8000`.
+- **Open:** http://localhost:5173 and create an account.
+- **API address:** `npm run dev` uses `localhost:8000`; `npm run build` uses the deployed API (`web/.env.production`). Set `VITE_API_URL` to override either.
+- GPS tracking on the web works best in a phone browser; on a laptop, log workouts manually.
 
 ### 3. Mobile app
 
@@ -100,9 +92,9 @@ npx expo start
 ```
 
 - **On a phone:** scan the QR code with Expo Go, or press `w` to open it in a browser.
-- **Server address:** the phone reads it from `mobile/.env` (`EXPO_PUBLIC_API_URL`), and you can change it in the app (first screen or the Profile tab). The phone and the laptop must be on the same Wi-Fi. If the phone can't connect, allow Python through Windows Firewall on private networks.
-
-**Installable APK:** `mobile/apk/fitmine-1.0.0-universal.apk` (39 MB, runs on 32- and 64-bit ARM phones). Install it with `adb install -r <apk>`, or copy it to the phone and open it. It is signed with the Android debug key, which is fine for sideloading. It talks to `http://10.159.19.29:8000` by default (this laptop's Wi-Fi address when it was built); if that changes, update the address in the app.
+- **Server address:** read from `mobile/.env` (`EXPO_PUBLIC_API_URL`), which points at the deployed API. It can be changed under "Server settings" on the sign-in screen or in the Profile tab. For a laptop server use `http://<laptop-ip>:8000` on the same Wi-Fi.
+- **Recording:** keep the app open while recording; the screen stays on. Location permission is only used during a recording.
+- On Render's free plan the API sleeps after 15 minutes idle, so the first request after that can take about a minute.
 
 To rebuild the APK:
 
@@ -110,26 +102,22 @@ To rebuild the APK:
 node %USERPROFILE%\.claude\skills\iverto-app-builder\scripts\build-apk.mjs --dir mobile
 ```
 
-**Demo flow:**
-
-1. Pick a user (featured ones cover every persona, plus the flagged accounts).
-2. **Today** shows the predicted level, the persona and the weekly cube roll-up.
-3. **Record** simulates a watch recording. Toggle "GPS teleports" or "Recorded in a car" and upload; the detectors flag it, the run is segmented and matched to a route, and the level and persona are recomputed.
-4. **Insights**, **Routes** and **Profile** show the rules, routines, routes and data checks applied to that user.
-
-**Regenerating API types:** with the server running, run `npm run gen:api` in `web/` or `mobile/` to rebuild the TypeScript types from `/openapi.json`.
+**Regenerating API types:** with the server running, `npm run gen:api` in `web/` or `mobile/` rebuilds the TypeScript types from `/openapi.json`.
 
 ## Layout
 
 ```
 server/
-  fitmine/data/          generator.py (synthetic data + ground truth), store.py (SQLite or Supabase), geo.py
+  fitmine/data/          generator.py (synthetic training data + ground truth), store.py (SQLite or Supabase), geo.py
   fitmine/algorithms/    from-scratch algorithms, one module each, no domain knowledge
-  fitmine/analyses/      u1_preprocess … u7_sequences_trajectories, verify (apply algorithms to fitness data)
-  fitmine/pipeline.py    runs everything, writes artifacts/*.json and artifacts/models.pkl
-  fitmine/models_runtime.py  scores new uploads, recomputes a user's level/persona, recommendations
-  api/                   FastAPI: analyst endpoints (routers/analyst.py), mobile endpoints (routers/users.py)
+  fitmine/analyses/      one module per feature: cleaning, suggestions, fitness_level, personas, data_checks,
+                         routines_routes; verify (library cross-checks)
+  fitmine/pipeline.py    trains everything, writes artifacts/*.json and artifacts/models.pkl
+  fitmine/models_runtime.py  applies the trained models to one user's workouts
+  fitmine/live.py        accounts, tokens, the user's own workouts, the live profile
+  api/                   FastAPI: routers/account.py (auth + /api/me), routers/models.py (admin model reports)
   tests/                 pytest
-web/src/pages/           Overview, one page per unit, Verification
-mobile/app/              expo-router screens: user picker, tabs (today, log, insights, routes, profile), workout/[id]
+web/src/pages/app/       Today, Log, Insights, Routes, Profile, Workout
+web/src/pages/models/    admin model pages, one per feature, and Verification
+mobile/app/              expo-router screens: sign-in, tabs (today, record, insights, routes, profile), workout/[id]
 ```

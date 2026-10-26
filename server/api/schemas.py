@@ -1,85 +1,66 @@
-"""Request and response models. Analyst endpoints return report dictionaries
-(documented on the dashboard); the mobile endpoints are fully typed so the app
-can generate TypeScript types from /openapi.json."""
+"""Request and response models. The account endpoints are fully typed so the
+web and phone apps can generate TypeScript types from /openapi.json; the admin
+model endpoints return the pipeline's report dictionaries."""
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-
-# ----------------------------------------------------------------------------- analyst requests
-
-class OlapQuery(BaseModel):
-    spec: dict[str, Any]
-    op: dict[str, Any] | None = Field(None, description="rollup | drilldown | slice | dice | pivot | clear_filters")
+Activity = Literal["Run", "Walk", "Cycle", "Swim", "Strength", "HIIT", "Yoga"]
 
 
-class AssociationRun(BaseModel):
-    algorithm: Literal["apriori", "fpgrowth"] = "fpgrowth"
-    basket: Literal["session", "user_week"] = "session"
-    min_support: float = Field(0.02, gt=0, le=1)
-    min_confidence: float = Field(0.6, ge=0, le=1)
-    min_lift: float = Field(1.0, ge=0)
+# ----------------------------------------------------------------------------- accounts
+
+class SignupRequest(BaseModel):
+    email: str = Field(max_length=200)
+    password: str = Field(min_length=8, max_length=200)
+    name: str = Field(min_length=1, max_length=80)
+    gender: Literal["F", "M"]
+    age: int = Field(ge=13, le=100)
+    height_cm: float = Field(ge=120, le=230)
+    weight_kg: float = Field(ge=30, le=250)
+    resting_hr: float | None = Field(None, ge=30, le=120, description="optional, bpm")
+    vo2max: float | None = Field(None, ge=15, le=90, description="optional, from a watch or a lab test")
 
 
-class ClassifyRun(BaseModel):
-    model: Literal["id3", "c45", "cart", "nb", "knn"] = "c45"
-    max_depth: int = Field(6, ge=1, le=20)
-    min_samples_split: int = Field(10, ge=2, le=200)
-    prune: bool = False
-    k: int = Field(7, ge=1, le=75)
-    weights: Literal["uniform", "distance"] = "distance"
-    folds: int = Field(5, ge=2, le=10)
+class LoginRequest(BaseModel):
+    email: str = Field(max_length=200)
+    password: str = Field(max_length=200)
 
 
-class ClusterRun(BaseModel):
-    algorithm: Literal["kmeans", "kmedoids", "agglomerative", "dbscan"] = "kmeans"
-    k: int = Field(5, ge=2, le=15)
-    linkage: Literal["single", "complete", "average", "ward"] = "ward"
-    method: Literal["pam", "clara"] = "pam"
-    eps: float = Field(1.2, gt=0)
-    min_samples: int = Field(10, ge=2)
-    n_init: int = Field(5, ge=1, le=20)
+class ProfileUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=80)
+    gender: Literal["F", "M"] | None = None
+    age: int | None = Field(None, ge=13, le=100)
+    height_cm: float | None = Field(None, ge=120, le=230)
+    weight_kg: float | None = Field(None, ge=30, le=250)
+    resting_hr: float | None = Field(None, ge=30, le=120)
+    vo2max: float | None = Field(None, ge=15, le=90)
 
 
-class OutlierRun(BaseModel):
-    method: Literal["zscore", "iqr", "lof", "iforest", "rules", "duplicates", "ensemble"] = "ensemble"
-    z: float = Field(4.0, gt=0)
-    k: float = Field(3.0, gt=0, description="IQR fence multiplier")
-    contamination: float = Field(0.03, gt=0, lt=0.5)
-    lof_k: int = Field(20, ge=2, le=100)
-    n_trees: int = Field(100, ge=10, le=500)
-
-
-class SequenceRun(BaseModel):
-    min_support: float = Field(0.025, gt=0, le=1)
-    max_gap: int | None = Field(4, ge=1, le=6)
-
-
-class RouteRun(BaseModel):
-    eps: float = Field(150, gt=0, description="metres")
-    min_samples: int = Field(8, ge=2)
-
-
-class HotspotRun(BaseModel):
-    eps: float = Field(100, gt=0, description="metres")
-    min_samples: int = Field(60, ge=2)
-
-
-# ----------------------------------------------------------------------------- mobile
-
-class UserSummary(BaseModel):
+class Account(BaseModel):
     user_id: int
+    email: str
     name: str
     gender: str
     age: int
-    home_zone: str
-    level: str
-    level_source: str
-    persona: str
-    flagged: bool
+    height_cm: float
+    weight_kg: float
+    bmi: float
+    resting_hr: float | None
+    vo2max: float | None
+    signup_date: str
+    is_admin: bool
 
+
+class AuthResult(BaseModel):
+    token: str
+    account: Account
+
+
+# ----------------------------------------------------------------------------- the user's own data
 
 class Level(BaseModel):
     value: str
@@ -92,12 +73,6 @@ class Persona(BaseModel):
     name: str
     cluster: int
     distances: dict[str, float]
-
-
-class SimilarUser(BaseModel):
-    user_id: int
-    name: str
-    persona: str
 
 
 class WeekRollup(BaseModel):
@@ -117,12 +92,10 @@ class Profile(BaseModel):
     user: dict[str, Any]
     level: Level
     persona: Persona
-    similar: list[SimilarUser]
     weekly: list[WeekRollup]
     routines: list[Routine]
     stats: dict[str, float | None]
-    spoof_flag: bool
-    spoof_reasons: list[str]
+    workouts_counted: int = Field(description="workouts in the last 8 weeks that the predictions use")
     flagged_workouts: int
 
 
@@ -153,11 +126,10 @@ class Recommendation(BaseModel):
 
 
 class Alert(BaseModel):
-    kind: Literal["workout", "profile"]
-    workout_id: int | None
+    workout_id: int
     title: str
     detail: str
-    start_time: str | None
+    start_time: str
 
 
 class Segment(BaseModel):
@@ -192,25 +164,33 @@ class UserRoutes(BaseModel):
     workouts: list[WorkoutItem]
 
 
-class UploadRequest(BaseModel):
-    activity: Literal["Run", "Walk", "Cycle", "Swim", "Strength", "HIIT", "Yoga"] = "Run"
-    kind: Literal["easy", "intervals", "tempo", "long", "push", "pull", "legs"] = "easy"
-    route: Literal["popular", "personal"] = "popular"
-    faults: list[Literal["hr_spike", "hr_flatline", "hr_dropout", "gps_teleport", "car_speed",
-                         "calorie_mismatch"]] = []
-    exercises: list[str] | None = None
-    title: str | None = None
+class TrackPoint(BaseModel):
+    t: float = Field(description="milliseconds since the epoch")
+    lat: float = Field(ge=-90, le=90)
+    lon: float = Field(ge=-180, le=180)
+    accuracy: float | None = Field(None, description="metres")
+
+
+class RecordRequest(BaseModel):
+    activity: Activity
+    start_time: datetime | None = Field(None, description="local time the workout started; default now")
+    duration_min: float = Field(gt=0, le=600, description="moving time")
+    kind: Literal["push", "pull", "legs"] | None = Field(None, description="strength split, if known")
+    distance_km: float | None = Field(None, ge=0, le=400, description="for workouts without a GPS track")
+    avg_hr: float | None = Field(None, ge=30, le=230)
+    max_hr: float | None = Field(None, ge=30, le=240)
+    calories: float | None = Field(None, ge=0, le=6000)
+    exercises: list[str] = Field(default_factory=list, max_length=40)
+    title: str | None = Field(None, max_length=60)
+    track: list[TrackPoint] | None = Field(None, max_length=40000, description="phone GPS fixes")
 
 
 class Verdict(BaseModel):
     flagged: bool
     reasons: list[str]
-    detectors: dict[str, bool]
-    scores: dict[str, float]
-    features: dict[str, float | None]
 
 
-class UploadResult(BaseModel):
+class RecordResult(BaseModel):
     workout: WorkoutItem
     verdict: Verdict
     detail: WorkoutDetail
@@ -219,3 +199,9 @@ class UploadResult(BaseModel):
     persona_before: str
     persona_after: str
     recommendations: list[Recommendation]
+
+
+class Catalog(BaseModel):
+    activities: list[str]
+    gps_activities: list[str]
+    exercises: dict[str, list[str]] = Field(description="exercises offered when logging each activity")

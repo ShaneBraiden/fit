@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom';
 import 'leaflet/dist/leaflet.css';
 import './theme/tokens.css';
 import App from './App';
+import { AuthProvider } from './auth';
 
 try {
   const t = localStorage.getItem('fitmine-theme');
@@ -13,7 +14,9 @@ try {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HashRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </HashRouter>
   </React.StrictMode>,
 );

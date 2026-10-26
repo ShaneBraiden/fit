@@ -1,16 +1,34 @@
-import { useLocalSearchParams } from 'expo-router';
-import { View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
+import { Alert as RNAlert, Platform, View } from 'react-native';
 import { HrChart, RouteMap, SpeedChart } from '../../components/charts';
-import { Card, Chip, Divider, ErrorState, H2, P, Pill, Row, Screen, Skeleton, Stat } from '../../components/ui';
-import { fmt, useFetch, WorkoutDetail } from '../../lib/api';
-import { useSession } from '../../lib/session';
+import { Button, Card, Chip, ErrorState, H2, P, Pill, Row, Screen, Skeleton, Stat } from '../../components/ui';
+import { fmt, useApi, useFetch, WorkoutDetail } from '../../lib/api';
 import { space } from '../../lib/theme';
+
+const split = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2');
 
 export default function Workout() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { userId } = useSession();
-  const d = useFetch<WorkoutDetail>(userId && id ? `/api/users/${userId}/workouts/${id}` : null);
+  const api = useApi();
+  const d = useFetch<WorkoutDetail>(id ? `/api/me/workouts/${id}` : null);
+  const [busy, setBusy] = useState(false);
   const w = d.data?.workout;
+
+  const remove = async () => {
+    setBusy(true);
+    try {
+      await api(`/api/me/workouts/${id}`, undefined, 'DELETE');
+      router.back();
+    } finally {
+      setBusy(false);
+    }
+  };
+  const confirmRemove = () => {
+    if (Platform.OS === 'web') { if (window.confirm('Delete this workout? This cannot be undone.')) remove(); return; }
+    RNAlert.alert('Delete this workout?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: remove }]);
+  };
 
   return (
     <Screen refreshing={d.loading} onRefresh={d.reload}>
@@ -18,22 +36,22 @@ export default function Workout() {
         <>
           <View>
             <P style={{ fontSize: 22, fontWeight: '700' }}>{w.title}</P>
-            <P muted small>{w.activity} · {fmt.date(w.start_time)} {fmt.time(w.start_time)}{w.source === 'app' ? ' · recorded in the app' : ''}</P>
+            <P muted small>{split(w.session_type)} · {fmt.date(w.start_time)} {fmt.time(w.start_time)} · {w.source === 'gps' ? 'tracked with GPS' : 'logged manually'}</P>
           </View>
           <Card>
             <Row wrap gap={space.lg}>
               <Stat label="Duration" value={`${Math.round(w.duration_min)} min`} />
               {w.distance_km ? <Stat label="Distance" value={`${w.distance_km.toFixed(2)} km`} /> : null}
-              <Stat label="Avg / max HR" value={`${fmt.n(w.avg_hr)} / ${fmt.n(w.max_hr)}`} sub="bpm" />
+              {w.avg_hr ? <Stat label="Avg / max HR" value={`${fmt.n(w.avg_hr)} / ${fmt.n(w.max_hr)}`} sub="bpm" /> : null}
               <Stat label="Calories" value={fmt.n(w.calories)} />
             </Row>
           </Card>
           <Card>
             <Row style={{ justifyContent: 'space-between' }}>
-              <H2>Sensor check</H2>
-              <Pill kind={w.flagged ? 'bad' : 'good'} label={w.flagged ? 'Flagged' : 'Clean'} />
+              <H2>Data check</H2>
+              <Pill kind={w.flagged ? 'bad' : 'good'} label={w.flagged ? 'Not counted' : 'Counted'} />
             </Row>
-            <P muted small>{w.flagged ? fmt.reason(w.reasons) : 'No detector found anything unusual in this recording.'}</P>
+            <P muted small>{w.flagged ? `${fmt.reason(w.reasons)}. This workout doesn't count towards your stats.` : 'Nothing unusual in this workout.'}</P>
           </Card>
           {d.data.hr.length > 0 && (
             <Card>
@@ -43,11 +61,8 @@ export default function Workout() {
           )}
           {d.data.lat && d.data.lon && (
             <Card>
-              <H2>Route & phases</H2>
-              <P muted small style={{ marginBottom: space.sm }}>
-                {d.data.run_kind ? `Detected session type: ${d.data.run_kind}` : ''}
-                {d.data.route ? ` · matched route ${String(d.data.route.name)}` : ' · no popular route matched'}
-              </P>
+              <H2>Route{d.data.segments ? ' & phases' : ''}</H2>
+              {d.data.route && <P muted small style={{ marginBottom: space.sm }}>On {String(d.data.route.name)}</P>}
               <RouteMap lat={d.data.lat} lon={d.data.lon} segments={d.data.segments} height={220} />
               {d.data.speed_kmh && d.data.segments && <View style={{ marginTop: space.md }}>
                 <SpeedChart speed={d.data.speed_kmh} segments={d.data.segments} />
@@ -58,10 +73,9 @@ export default function Workout() {
             <Card>
               <H2>Exercises</H2>
               <Row wrap gap={space.sm}>{d.data.exercises.map((e) => <Chip key={e} label={e} />)}</Row>
-              <Divider />
-              <P muted small>These baskets are what the association-rule miner learns from.</P>
             </Card>
           )}
+          <Button label="Delete workout" kind="secondary" icon="trash-outline" onPress={confirmRemove} busy={busy} />
         </>
       )}
     </Screen>

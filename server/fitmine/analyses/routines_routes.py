@@ -1,12 +1,11 @@
-"""U7 Advanced mining: sequential patterns in weekly routines, and trajectory
-mining on GPS tracks (hotspots, popular routes, run segmentation).
+"""Weekly routines and GPS routes.
 
-Sequences  one data sequence per user-week; elements are the session types done
-           on the same day (time = day of week). GSP with a max-gap constraint.
-Hotspots   DBSCAN over points resampled every 100 m along tracks (uniform density per km).
-Routes     tracks resampled to 24 points, pairwise Hausdorff distance, DBSCAN on the
+Routines   one data sequence per user-week; elements are the session types done on
+           the same day (time = day of week). GSP with a max-gap constraint finds the
+           orders people repeat; a user "follows" a routine in at least half their weeks.
+Routes     tracks resampled to 20 points, pairwise Hausdorff distance, DBSCAN on the
            precomputed matrix; clusters named after the nearest public landmark.
-Segments   binary segmentation of each run's GPS speed profile, labelled warm-up /
+Phases     binary segmentation of each run's GPS speed profile, labelled warm-up /
            steady / fast / recovery / stop / cool-down.
 """
 from __future__ import annotations
@@ -35,6 +34,12 @@ def week_sequences(con) -> tuple[list, list]:
     flags = store.read("workout_flags", con) if store.exists("workout_flags") else None
     if flags is not None:
         w = w[~w.workout_id.isin(flags.workout_id[flags.flagged.astype(bool)])]
+    return sequences_of(w)
+
+
+def sequences_of(w: pd.DataFrame) -> tuple[list, list]:
+    """One day-ordered sequence of session types per (user, ISO week)."""
+    w = w.copy()
     w["start_time"] = pd.to_datetime(w.start_time)
     w["week"] = w.start_time.dt.strftime("%G-W%V")
     w["dow"] = w.start_time.dt.dayofweek
@@ -92,39 +97,6 @@ def gps_tracks(con, exclude_flagged=True) -> tuple[pd.DataFrame, dict]:
         w = w[~w.workout_id.isin(fl.workout_id[fl.flagged.astype(bool)])]
     streams = store.load_streams(con, w.workout_id)
     return w[w.workout_id.isin(list(streams))], streams
-
-
-def hotspots(w, streams, max_tracks=1200, spacing=150, eps=100, min_samples=60, seed=0) -> dict:
-    rng = np.random.default_rng(seed)
-    ids = w.workout_id.to_numpy()
-    ids = rng.choice(ids, min(max_tracks, len(ids)), replace=False)
-    pts = []
-    for wid in ids:
-        s = streams[wid]
-        P = T.xy(s["lat"], s["lon"])
-        L = T.step_lengths(P).sum()
-        pts.append(T.resample(P, max(2, int(L / spacing))))
-    X = np.vstack(pts)
-    t = time.perf_counter()
-    m = DBSCAN(eps, min_samples).fit(X)
-    ms = (time.perf_counter() - t) * 1000
-    clusters = []
-    for c in range(m.n_clusters_):
-        Q = X[m.labels_ == c]
-        lat, lon = geo.to_latlon(Q[:, 0], Q[:, 1])
-        name, dist = geo.nearest_landmark(float(lat.mean()), float(lon.mean()))
-        sub = rng.choice(len(Q), min(250, len(Q)), replace=False)
-        clusters.append({"cluster": c, "points": int(len(Q)), "landmark": name, "landmark_m": round(dist),
-                         "centre": [float(lat.mean()), float(lon.mean())],
-                         "sample": np.c_[lat[sub], lon[sub]].round(5).tolist()})
-    clusters.sort(key=lambda c: -c["points"])
-    noise = X[m.labels_ == -1]
-    nl, nn = geo.to_latlon(noise[:, 0], noise[:, 1])
-    sub = rng.choice(len(noise), min(1500, len(noise)), replace=False) if len(noise) else []
-    return {"params": {"eps_m": eps, "min_samples": min_samples, "spacing_m": spacing},
-            "n_points": int(len(X)), "n_tracks": int(len(ids)), "n_clusters": m.n_clusters_,
-            "noise_points": int((m.labels_ == -1).sum()), "ms": round(ms, 1), "clusters": clusters,
-            "noise_sample": np.c_[nl[sub], nn[sub]].round(5).tolist() if len(noise) else []}
 
 
 def resampled(streams, ids) -> np.ndarray:
@@ -232,23 +204,6 @@ def segmentation_eval(w, streams, gt_seg: pd.DataFrame, gt_w: pd.DataFrame, n=60
             "ms_per_run": round(ms / len(ids), 2)}
 
 
-def segments_for(con, workout_id: int, beta: float = 1.0) -> dict | None:
-    s = store.load_stream(con, workout_id)
-    if s is None or s["lat"] is None:
-        return None
-    r = segment_one(s, beta)
-    P = T.xy(s["lat"], s["lon"])
-    keep = T.douglas_peucker(P, 10.0)
-    gt = store.read("gt_segments", con, "WHERE workout_id=?", (int(workout_id),))
-    return {"workout_id": int(workout_id), "speed_kmh": (r["speed"] * 3.6).round(2).tolist(),
-            "hr": s["hr"].astype(int).tolist(), "lat": np.round(s["lat"], 6).tolist(),
-            "lon": np.round(s["lon"], 6).tolist(), "segments": r["segments"], "change_points": r["change_points"],
-            "kind": r["kind"], "ref_speed_kmh": r["ref_speed"] * 3.6, "dt": DT,
-            "simplified": {"points": len(keep), "of": len(P), "epsilon_m": 10.0,
-                           "lat": np.round(s["lat"][keep], 6).tolist(), "lon": np.round(s["lon"][keep], 6).tolist()},
-            "truth": gt[["start_idx", "end_idx", "phase"]].to_dict("records")}
-
-
 def run(con) -> tuple[dict, dict, dict]:
     planted = store.planted(con)
     seqs, keys = week_sequences(con)
@@ -257,27 +212,16 @@ def run(con) -> tuple[dict, dict, dict]:
     w, streams = gps_tracks(con)
     gt_w = store.read("gt_workouts", con)
     gt_route = gt_w.set_index("workout_id").route_id
-    hs = hotspots(w, streams)
     routes, rstate = route_clusters(w, streams, gt_route)
     gt_seg = store.read("gt_segments", con)
     seg = segmentation_eval(w, streams, gt_seg, gt_w)
-    seg["beta_sweep"] = [{k: v for k, v in segmentation_eval(w, streams, gt_seg, gt_w, 300, b).items()
-                          if k in ("beta", "boundary_precision", "boundary_recall", "boundary_f1")}
-                         for b in (0.5, 0.8, 1.0, 1.5, 2.0, 3.0, 4.0)]
-    # Douglas-Peucker compression over all tracks
-    ratios = []
-    for wid in w.workout_id.to_numpy()[:3000]:
-        P = T.xy(streams[wid]["lat"], streams[wid]["lon"])
-        ratios.append(len(T.douglas_peucker(P, 10.0)) / len(P))
     # Route of every GPS workout for the app
     ids = w.workout_id.to_numpy()
     assigned = assign_routes(rstate["model"], resampled(streams, ids))
     route_of = {int(i): a for i, a in zip(ids, assigned)}
     example = int(w[(w.activity == "Run")].merge(gt_w[gt_w.session_type == "IntervalRun"], on="workout_id")
                   .workout_id.iloc[0])
-    report = {"sequences": seq, "hotspots": hs, "routes": routes, "segmentation": seg,
-              "compression": {"epsilon_m": 10.0, "mean_kept": float(np.mean(ratios)), "tracks": len(ratios)},
-              "example_workout": example}
+    report = {"sequences": seq, "routes": routes, "segmentation": seg, "example_workout": example}
     return report, {"routes": rstate["model"], "patterns": seq["patterns"]}, {"routines": routines,
                                                                               "route_of": route_of,
                                                                               "route_state": rstate}

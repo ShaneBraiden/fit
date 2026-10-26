@@ -1,11 +1,13 @@
 """Storage: SQLite on disk by default, or Postgres (Supabase) when DATABASE_URL is set.
 Tables are plain pandas frames; streams are compressed blobs.
 
-Raw tables (what the app collects):  users_raw, workouts_raw, exercises, streams
-Clean tables (written by U1):        users, workouts
-Warehouse (written by U2):           dim_user, dim_date, dim_activity, dim_location, fact_workout
-Mining outputs:                       user_insights, workout_flags
-Ground truth (evaluation only):       gt_users, gt_workouts, gt_segments, gt_values
+Synthetic training data (rebuilt by every pipeline run):
+  raw tables                          users_raw, workouts_raw, exercises, streams
+  clean tables (data cleaning)        users, workouts
+  mining outputs                      user_insights, workout_flags, workout_features, workout_routes
+  ground truth (evaluation only)      gt_users, gt_workouts, gt_segments, gt_values
+Real accounts (never touched by the pipeline, see fitmine/live.py):
+  accounts, auth_tokens, live_users, live_workouts, live_exercises, live_streams
 
 Callers use one sqlite3-style surface for both: con.execute / executemany with `?` placeholders,
 con.commit(), con.close(), and read / write / query below for pandas frames.
@@ -175,17 +177,17 @@ def _dec(b: bytes | None, scale: float, dtype) -> np.ndarray | None:
     return np.frombuffer(zlib.decompress(b), dtype=dtype).astype(float) / scale
 
 
-def write_streams(streams: dict, con, if_exists: str = "replace"):
+def write_streams(streams: dict, con, if_exists: str = "replace", table: str = "streams"):
     """streams: workout_id -> {"hr": array, "lat": array|None, "lon": array|None}."""
     rows = [(int(wid), len(s["hr"]), _enc(s["hr"], 1, np.int16),
              _enc(s["lat"], 1e6, np.int32), _enc(s["lon"], 1e6, np.int32)) for wid, s in streams.items()]
     with _lock:
         if if_exists == "replace":
-            con.execute("DROP TABLE IF EXISTS streams")
+            con.execute(f"DROP TABLE IF EXISTS {table}")
         blob = "BYTEA" if isinstance(con, PgConnection) else "BLOB"
-        con.execute(f"CREATE TABLE IF NOT EXISTS streams (workout_id INTEGER PRIMARY KEY, n INTEGER, "
+        con.execute(f"CREATE TABLE IF NOT EXISTS {table} (workout_id INTEGER PRIMARY KEY, n INTEGER, "
                     f"hr {blob}, lat {blob}, lon {blob})")
-        con.executemany("INSERT INTO streams VALUES (?,?,?,?,?) ON CONFLICT (workout_id) DO UPDATE SET "
+        con.executemany(f"INSERT INTO {table} VALUES (?,?,?,?,?) ON CONFLICT (workout_id) DO UPDATE SET "
                         "n=excluded.n, hr=excluded.hr, lat=excluded.lat, lon=excluded.lon", rows)
         con.commit()
 
@@ -208,8 +210,8 @@ def load_streams(con, workout_ids=None) -> dict[int, dict]:
     return {r[0]: _row_to_stream(r) for r in cur}
 
 
-def load_stream(con, workout_id: int) -> dict | None:
-    r = con.execute("SELECT * FROM streams WHERE workout_id=?", (int(workout_id),)).fetchone()
+def load_stream(con, workout_id: int, table: str = "streams") -> dict | None:
+    r = con.execute(f"SELECT * FROM {table} WHERE workout_id=?", (int(workout_id),)).fetchone()
     return None if r is None else _row_to_stream(r)
 
 

@@ -1,6 +1,6 @@
-"""Trajectory mining on GPS tracks: speed profiles, Douglas-Peucker
-simplification, stop detection, change-point segmentation, and route
-similarity (discrete Hausdorff distance on arc-length resampled tracks)."""
+"""GPS track helpers: speed profiles, change-point segmentation of
+the speed profile, and route similarity (discrete Hausdorff distance on arc-length
+resampled tracks)."""
 from __future__ import annotations
 
 import numpy as np
@@ -9,7 +9,12 @@ from ..data import geo
 
 
 def xy(lat, lon) -> np.ndarray:
+    """Metres on the city's equirectangular plane. A track far from the city (a real user
+    elsewhere) is rescaled east-west to its own latitude so its distances stay true."""
     x, y = geo.to_xy(lat, lon)
+    lat_mid = float(np.mean(lat)) if np.size(lat) else geo.LAT0
+    if abs(lat_mid - geo.LAT0) > 1:
+        x = x * np.cos(np.radians(lat_mid)) / np.cos(np.radians(geo.LAT0))
     return np.column_stack([x, y])
 
 
@@ -21,30 +26,6 @@ def speed_profile(P: np.ndarray, dt: float) -> np.ndarray:
     """Speed (m/s) at each sample; the first sample copies the second."""
     v = step_lengths(P) / dt
     return np.r_[v[:1], v]
-
-
-def douglas_peucker(P: np.ndarray, epsilon: float) -> np.ndarray:
-    """Indices of points kept by Ramer-Douglas-Peucker with tolerance epsilon (metres)."""
-    n = len(P)
-    if n < 3:
-        return np.arange(n)
-    keep = np.zeros(n, bool)
-    keep[[0, n - 1]] = True
-    stack = [(0, n - 1)]
-    while stack:
-        a, b = stack.pop()
-        if b - a < 2:
-            continue
-        seg = P[b] - P[a]
-        L = np.hypot(*seg)
-        pts = P[a + 1:b] - P[a]
-        d = np.abs(seg[0] * pts[:, 1] - seg[1] * pts[:, 0]) / L if L > 0 else np.hypot(*pts.T)
-        i = int(d.argmax())
-        if d[i] > epsilon:
-            m = a + 1 + i
-            keep[m] = True
-            stack += [(a, m), (m, b)]
-    return np.where(keep)[0]
 
 
 def resample(P: np.ndarray, m: int) -> np.ndarray:
@@ -73,22 +54,6 @@ def hausdorff_matrix(tracks: np.ndarray, others: np.ndarray | None = None) -> np
         D = np.hypot(A[:, None, :, None, 0] - bx, A[:, None, :, None, 1] - by)  # (c, n_others, m, m)
         H[s:s + chunk] = np.maximum(D.min(3).max(2), D.min(2).max(2))
     return H
-
-
-def detect_stops(v: np.ndarray, threshold: float = 0.8, min_len: int = 2) -> list[tuple[int, int]]:
-    slow = v < threshold
-    out, i = [], 0
-    while i < len(v):
-        if slow[i]:
-            j = i
-            while j < len(v) and slow[j]:
-                j += 1
-            if j - i >= min_len:
-                out.append((i, j))
-            i = j
-        else:
-            i += 1
-    return out
 
 
 def binary_segmentation(x: np.ndarray, penalty: float, min_size: int = 3, max_cps: int = 40) -> list[int]:

@@ -1,19 +1,68 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { components } from './schema';
+
+export type S = components['schemas'];
+export type Account = S['Account'];
+export type AuthResult = S['AuthResult'];
+export type SignupRequest = S['SignupRequest'];
+export type Profile = S['Profile'];
+export type WorkoutItem = S['WorkoutItem'];
+export type WorkoutDetail = S['WorkoutDetail'];
+export type Recommendation = S['Recommendation'];
+export type Alert = S['Alert'];
+export type UserRoutes = S['UserRoutes'];
+export type RecordRequest = S['RecordRequest'];
+export type RecordResult = S['RecordResult'];
+export type Catalog = S['Catalog'];
 
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
 
-export async function api<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, body === undefined ? undefined : {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-  });
+const TOKEN_KEY = 'fitmine.token';
+/** Fired when the server rejects the stored token; the auth provider signs the user out. */
+export const SIGNED_OUT = 'fitmine:signed-out';
+
+export function getToken(): string | null {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
+export function setToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch { /* storage unavailable: the session lasts until the tab closes */ }
+}
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); }
+}
+
+type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+
+export async function api<T>(path: string, body?: unknown, method?: Method): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (token) headers.Authorization = `Bearer ${token}`;
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method: method ?? (body === undefined ? 'GET' : 'POST'), headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError("Can't reach the FitMine server. Check your connection and try again.", 0);
+  }
   if (!res.ok) {
     let detail = `${res.status} ${res.statusText}`;
     try {
       const j = await res.json();
-      detail = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail);
+      detail = typeof j.detail === 'string' ? j.detail
+        : Array.isArray(j.detail) ? j.detail.map((d: { msg?: string; loc?: string[] }) => `${d.loc?.slice(-1)[0] ?? ''}: ${d.msg}`).join('; ')
+          : JSON.stringify(j.detail);
     } catch { /* not JSON */ }
-    throw new Error(detail);
+    if (res.status === 401 && token) window.dispatchEvent(new Event(SIGNED_OUT));
+    throw new ApiError(detail, res.status);
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -34,22 +83,39 @@ export function useGet<T>(path: string | null): Loadable<T> {
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
   }, [path, tick]);
-  return { data, error, loading, reload: () => setTick((t) => t + 1) };
+  return { data, error, loading, reload: useCallback(() => setTick((t) => t + 1), []) };
 }
 
-/** A POST re-run whose result replaces the cached report once it arrives. */
-export function useRun<P, T>(path: string) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const seq = useRef(0);
-  const run = useCallback((params: P) => {
-    const id = ++seq.current;
-    setLoading(true);
-    setError(null);
-    return api<T>(path, params).then((d) => { if (id === seq.current) setData(d); return d; })
-      .catch((e: Error) => { if (id === seq.current) setError(e.message); return null; })
-      .finally(() => { if (id === seq.current) setLoading(false); });
-  }, [path]);
-  return { data, error, loading, run, setData };
+/** Local time as the server expects it: "YYYY-MM-DDTHH:MM:SS", no time zone. */
+export function localIso(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
+
+export const when = {
+  date: (iso: string | null | undefined) => (iso ? new Date(iso.replace(' ', 'T'))
+    .toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : ''),
+  time: (iso: string) => new Date(iso.replace(' ', 'T')).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+};
+
+export function pace(minPerKm: number | null | undefined): string {
+  if (minPerKm == null || !isFinite(minPerKm)) return '–';
+  const m = Math.floor(minPerKm);
+  return `${m}:${String(Math.round((minPerKm - m) * 60)).padStart(2, '0')}/km`;
+}
+
+const REASONS: Record<string, string> = {
+  hr_spike: 'heart-rate readings above any human maximum',
+  hr_flatline: 'heart rate stuck at one value',
+  hr_dropout: 'heart-rate sensor dropped out',
+  gps_teleport: 'GPS jumped kilometres in seconds',
+  car_speed: 'speed only possible in a vehicle',
+  calorie_mismatch: "calories don't match the effort",
+  duplicate_of_other_user: "identical to someone else's recording",
+};
+export function reasonText(r: string): string {
+  return r.split(', ').filter(Boolean)
+    .map((x) => REASONS[x] ?? (x.startsWith('unusual for a') ? 'very unusual numbers for this kind of workout' : x)).join(' · ');
+}
+
+export const splitWords = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2');

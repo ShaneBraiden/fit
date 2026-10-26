@@ -13,8 +13,8 @@ const TABS: { name: string; title: string; icon: string }[] = [
 
 export default function TabsLayout() {
   const t = useTheme();
-  const { ready, userId } = useSession();
-  if (ready && userId == null) return <Redirect href="/" />;
+  const { ready, token } = useSession();
+  if (ready && !token) return <Redirect href="/" />;
   return (
     <Tabs screenOptions={{
       headerShown: false, tabBarActiveTintColor: t.accent, tabBarInactiveTintColor: t.muted,

@@ -6,12 +6,12 @@ streams. Every pattern the mining is meant to find is *planted* here and
 recorded in ground-truth tables (gt_*) and in `planted`, which only the
 evaluation code reads:
 
-  U1  missing values, duplicate re-syncs, mixed units, messy activity labels
-  U3  exercise session templates  -> co-occurrence rules
-  U4  latent fitness score        -> assessed fitness level (noisy, 75% labelled)
-  U5  five personas               -> activity mix
-  U6  sensor faults + spoofing    -> anomalies
-  U7  weekly schedules            -> sequential patterns; popular routes and run phases
+  cleaning        missing values, duplicate re-syncs, mixed units, messy activity labels
+  suggestions     exercise session templates  -> co-occurrence rules
+  fitness level   latent fitness score        -> assessed fitness level (noisy, 75% labelled)
+  personas        five personas               -> activity mix
+  data checks     sensor faults + spoofing    -> anomalies
+  routines/routes weekly schedules            -> sequential patterns; popular routes and run phases
 """
 from __future__ import annotations
 
@@ -445,7 +445,7 @@ class _Gen:
                     hour = float(np.clip(base_h + rng.normal(0, 0.6), 5, 21.5))
                     self.workout(u, stype, datetime.combine(day, datetime.min.time()) + timedelta(seconds=int(hour * 3600)))
 
-    # ---- faults (U6)
+    # ---- faults (data checks)
     def faults(self, users: pd.DataFrame):
         rng = self.rng
         gps = [r["k"] for r in self.rows if self.streams[r["k"]]["lat"] is not None]
@@ -532,7 +532,7 @@ class _Gen:
         self.rows[k]["duration_min"] = round(n * DT / 60, 2)
         self._fault(k, "car_speed")
 
-    # ---- profile spoofing (U6)
+    # ---- profile spoofing (data checks)
     def spoof_profiles(self, users: pd.DataFrame) -> pd.DataFrame:
         rng = self.rng
         users = users.copy()
@@ -578,7 +578,7 @@ class _Gen:
             next_id += 1
         return pd.concat([users, pd.DataFrame(new_rows)], ignore_index=True)
 
-    # ---- U1 data quality issues
+    # ---- data quality issues (cleaning)
     def resync_duplicates(self):
         rng = self.rng
         clean = [r for r in self.rows if self.gt_w[r["k"]]["fault_type"] is None]
@@ -615,7 +615,7 @@ def generate(seed: int = C.SEED, n_users: int = C.N_USERS) -> Dataset:
                                 if g.gt_w[k]["fault_type"] is None],
                                columns=["workout_id", "start_idx", "end_idx", "phase"])
 
-    # ---- U1 corruption, remembering the true values
+    # ---- corruption, remembering the true values (cleaning)
     gt_values = []
     imperial_users = set(users.loc[users.device == IMPERIAL_DEVICE, "user_id"])
     for col in ("avg_hr", "calories"):

@@ -21,6 +21,9 @@ DB_PATH = DATA_DIR / "fitmine.db"
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 DB_SCHEMA = os.environ.get("DB_SCHEMA", "fitmine")
 ARTIFACTS_DIR = SERVER_DIR / "artifacts"
+# Accounts allowed to open the model pages on the web dashboard (comma-separated emails).
+ADMIN_EMAILS = {e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()}
+TOKEN_DAYS = 90  # sign-in tokens expire after this many days
 
 SEED = 42
 N_USERS = 1000

@@ -1,6 +1,7 @@
 services:
-  # FastAPI + data-mining pipeline. The pipeline runs at build time (~100 s) and writes its tables to
-  # Supabase (DATABASE_URL), so workouts recorded in the app survive restarts until the next deploy.
+  # FastAPI + model training. The pipeline runs at build time (~3 min) and rebuilds the synthetic training
+  # tables in Supabase (DATABASE_URL). Accounts and the workouts users record live in separate tables
+  # (accounts, auth_tokens, live_*) that the pipeline never touches, so they survive every deploy.
   - type: web
     name: fitmine-api
     runtime: python
@@ -16,8 +17,11 @@ services:
         # Supabase session pooler URI (Connect > Session pooler), e.g.
         # postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
         sync: false
+      - key: ADMIN_EMAILS
+        # Comma-separated account emails that can open the model pages on the web app
+        sync: false
 
-  # React dashboard (static). Android/mobile folders are not needed here.
+  # React web app (static): sign-in, the user's own pages, and admin model pages.
   - type: web
     name: fitmine-dashboard
     runtime: static

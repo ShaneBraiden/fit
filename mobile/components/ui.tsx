@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View,
+  ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { radius, space, type, useTheme } from '../lib/theme';
 
@@ -141,6 +142,22 @@ export function EmptyState({ icon, title, body }: { icon: string; title: string;
       <P style={{ fontWeight: '600', marginTop: space.sm }}>{title}</P>
       {body && <P muted small style={{ textAlign: 'center', marginTop: 4 }}>{body}</P>}
     </Card>
+  );
+}
+
+/** Labelled text input. Numbers are typed as text and parsed by the caller. */
+export function Field({ label, value, onChangeText, hint, ...input }: {
+  label: string; value: string; onChangeText: (v: string) => void; hint?: string;
+} & Omit<TextInputProps, 'value' | 'onChangeText'>) {
+  const t = useTheme();
+  return (
+    <View style={{ flex: 1, minWidth: 120 }}>
+      <Text style={[type.small, { color: t.text2, marginBottom: 4 }]}>{label}</Text>
+      <TextInput value={value} onChangeText={onChangeText} placeholderTextColor={t.muted} accessibilityLabel={label}
+        style={{ borderWidth: 1, borderColor: t.border, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10,
+          color: t.text, backgroundColor: t.surface2, fontSize: 15 }} {...input} />
+      {hint && <Text style={[type.small, { color: t.muted, marginTop: 3 }]}>{hint}</Text>}
+    </View>
   );
 }
 
