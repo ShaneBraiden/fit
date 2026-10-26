@@ -15,7 +15,7 @@ _lock = threading.Lock()
 
 
 def con():
-    """A fresh SQLite connection per request (SQLite connections are not thread-safe)."""
+    """A fresh connection per request (SQLite connections are not thread-safe; Postgres ones come from a pool)."""
     c = store.connect()
     try:
         yield c
@@ -31,7 +31,7 @@ def report(name: str) -> dict:
 
 
 def ready() -> bool:
-    return (C.ARTIFACTS_DIR / "summary.json").exists() and C.DB_PATH.exists()
+    return (C.ARTIFACTS_DIR / "summary.json").exists() and store.exists("user_insights")
 
 
 @lru_cache(maxsize=1)

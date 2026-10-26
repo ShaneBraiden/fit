@@ -54,12 +54,10 @@ def dataset_summary(con=Depends(state.con)):
     for t in ("users_raw", "workouts_raw", "exercises", "streams", "users", "workouts", "fact_workout", "dim_date",
               "dim_time", "dim_activity", "dim_location", "dim_user", "workout_features", "workout_flags",
               "user_insights", "workout_routes"):
-        try:
-            n = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
-            cols = [r[1] for r in con.execute(f"PRAGMA table_info({t})")]
-            tables[t] = {"rows": n, "columns": cols}
-        except Exception:  # table not built yet
+        if not store.exists(t):  # table not built yet
             continue
+        n = con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+        tables[t] = {"rows": n, "columns": store.columns(t, con)}
     u1 = state.report("u1")
     return {"tables": tables, "profile": u1["profile"], "raw": u1["raw"], "clean": u1["clean"],
             "planted": store.planted(con)}

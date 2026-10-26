@@ -1,5 +1,6 @@
 # server
 server/.venv/
+server/.env
 server/data/
 server/artifacts/
 __pycache__/

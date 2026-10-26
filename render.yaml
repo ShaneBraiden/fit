@@ -1,5 +1,6 @@
 services:
-  # FastAPI + data-mining pipeline. server/data is gitignored, so the pipeline runs at build time (~100 s).
+  # FastAPI + data-mining pipeline. The pipeline runs at build time (~100 s) and writes its tables to
+  # Supabase (DATABASE_URL), so workouts recorded in the app survive restarts until the next deploy.
   - type: web
     name: fitmine-api
     runtime: python
@@ -11,6 +12,10 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: DATABASE_URL
+        # Supabase session pooler URI (Connect > Session pooler), e.g.
+        # postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+        sync: false
 
   # React dashboard (static). Android/mobile folders are not needed here.
   - type: web

@@ -3,6 +3,9 @@ uvicorn[standard]>=0.30
 numpy>=1.26
 pandas>=2.2
 scipy>=1.13
+# Postgres / Supabase, used when DATABASE_URL is set
+sqlalchemy>=2.0
+psycopg[binary]>=3.2
 # reference implementations, used only by fitmine/analyses/verify.py and the tests
 scikit-learn>=1.5
 mlxtend>=0.23

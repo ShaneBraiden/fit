@@ -1,12 +1,25 @@
 """Project-wide settings: paths, dataset size, and the synthetic city."""
 from __future__ import annotations
 
+import os
 from datetime import date
 from pathlib import Path
 
 SERVER_DIR = Path(__file__).resolve().parent.parent
+
+# server/.env (gitignored) can hold DATABASE_URL; real environment variables win.
+_ENV = SERVER_DIR / ".env"
+if _ENV.exists():
+    for _line in _ENV.read_text(encoding="utf-8").splitlines():
+        _k, _sep, _v = _line.partition("=")
+        if _sep and not _line.lstrip().startswith("#"):
+            os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
+
 DATA_DIR = SERVER_DIR / "data"
 DB_PATH = DATA_DIR / "fitmine.db"
+# Supabase (Postgres) connection string. Empty means the local SQLite file at DB_PATH.
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+DB_SCHEMA = os.environ.get("DB_SCHEMA", "fitmine")
 ARTIFACTS_DIR = SERVER_DIR / "artifacts"
 
 SEED = 42

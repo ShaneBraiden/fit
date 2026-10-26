@@ -31,7 +31,7 @@ router = APIRouter(prefix="/api/users", tags=["mobile"])
 
 WORKOUT_SQL = """
 SELECT w.workout_id, w.activity, w.session_type, w.title, w.start_time, w.duration_min, w.distance_km, w.avg_hr,
-       w.max_hr, w.calories, w.has_gps, w.source, COALESCE(f.flagged, 0) AS flagged,
+       w.max_hr, w.calories, w.has_gps, w.source, COALESCE(f.flagged, FALSE) AS flagged,
        COALESCE(f.reasons, '') AS reasons, r.route_name
 FROM workouts w
 LEFT JOIN workout_flags f USING (workout_id)
@@ -61,12 +61,12 @@ def _workouts(con, user_id: int, where: str = "", params=(), limit: int | None =
     q = WORKOUT_SQL + " WHERE w.user_id=? " + where + " ORDER BY w.start_time DESC"
     if limit:
         q += f" LIMIT {int(limit)}"
-    return pd.read_sql_query(q, con, params=(user_id, *params))
+    return store.query(q, con, (user_id, *params))
 
 
 @router.get("", response_model=list[UserSummary])
 def list_users(query: str = "", limit: int = 50, featured: bool = False, con=Depends(state.con)):
-    df = pd.read_sql_query(
+    df = store.query(
         "SELECT u.user_id, u.name, u.gender, u.age, u.home_zone, i.level, i.level_source, i.persona, "
         "i.spoof_flag AS flagged FROM users u JOIN user_insights i USING (user_id) ORDER BY u.user_id", con)
     if query:
@@ -106,7 +106,7 @@ def _profile(con, user_id: int) -> dict:
     ins = store.read("user_insights", con, "WHERE user_id=?", (user_id,))
     rt = RT.user_profile(con, user_id)
     assessed = u.assessed_level if isinstance(u.assessed_level, str) else None
-    names = pd.read_sql_query(
+    names = store.query(
         f"SELECT u.user_id, u.name, i.persona FROM users u JOIN user_insights i USING (user_id) "
         f"WHERE u.user_id IN ({','.join(str(int(s)) for s in rt['similar']) or '0'})", con).set_index("user_id")
     w = store.read("workouts", con, "WHERE user_id=?", (user_id,))
