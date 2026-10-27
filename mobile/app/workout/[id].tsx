@@ -72,7 +72,11 @@ export default function Workout() {
           {d.data.exercises.length > 0 && (
             <Card>
               <H2>Exercises</H2>
-              <Row wrap gap={space.sm}>{d.data.exercises.map((e) => <Chip key={e} label={e} />)}</Row>
+              <Row wrap gap={space.sm}>{d.data.exercises.map((e) => {
+                const l = d.data!.loads.find((x) => x.exercise === e);
+                const detail = l ? [l.sets && `${l.sets}×${l.reps ?? '?'}`, l.weight_kg != null && `${fmt.n(l.weight_kg, 1)} kg`].filter(Boolean).join(' @ ') : '';
+                return <Chip key={e} label={detail ? `${e} · ${detail}` : e} />;
+              })}</Row>
             </Card>
           )}
           <Button label="Delete workout" kind="secondary" icon="trash-outline" onPress={confirmRemove} busy={busy} />

@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { api } from './api/client';
 import { useAuth } from './auth';
+import FriendsPage, { ComparePage } from './pages/app/Friends';
 import Insights from './pages/app/Insights';
 import Log from './pages/app/Log';
+import Muscles from './pages/app/Muscles';
+import PlanPage from './pages/app/Plan';
 import Profile from './pages/app/Profile';
 import RoutesPage from './pages/app/Routes';
+import StreakPage from './pages/app/Streak';
 import Today from './pages/app/Today';
 import Workout from './pages/app/Workout';
 import Login from './pages/Login';
@@ -21,6 +25,10 @@ import Verification from './pages/models/Verification';
 const APP = [
   { to: '/', icon: '◎', label: 'Today', end: true },
   { to: '/log', icon: '+', label: 'Log workout' },
+  { to: '/plan', icon: '▤', label: 'Weekly plan' },
+  { to: '/streak', icon: '✹', label: 'Streak' },
+  { to: '/muscles', icon: '◐', label: 'Muscles' },
+  { to: '/friends', icon: '⚇', label: 'Friends' },
   { to: '/insights', icon: '✦', label: 'Insights' },
   { to: '/routes', icon: '⌁', label: 'Routes' },
   { to: '/profile', icon: '☺', label: 'Profile' },
@@ -88,6 +96,11 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Today />} />
           <Route path="/log" element={<Log />} />
+          <Route path="/plan" element={<PlanPage />} />
+          <Route path="/streak" element={<StreakPage />} />
+          <Route path="/muscles" element={<Muscles />} />
+          <Route path="/friends" element={<FriendsPage />} />
+          <Route path="/friends/:id" element={<ComparePage />} />
           <Route path="/insights" element={<Insights />} />
           <Route path="/routes" element={<RoutesPage />} />
           <Route path="/profile" element={<Profile />} />

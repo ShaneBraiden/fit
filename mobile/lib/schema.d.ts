@@ -194,6 +194,128 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plan */
+        get: operations["plan_api_me_plan_get"];
+        /** Save Plan */
+        put: operations["save_plan_api_me_plan_put"];
+        post?: never;
+        /** Delete Plan */
+        delete: operations["delete_plan_api_me_plan_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/streak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Streak */
+        get: operations["streak_api_me_streak_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/muscles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Muscles */
+        get: operations["muscles_api_me_muscles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/friends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Friends */
+        get: operations["friends_api_me_friends_get"];
+        put?: never;
+        /** Add */
+        post: operations["add_api_me_friends_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/friends/{friend_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept */
+        post: operations["accept_api_me_friends__friend_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/friends/{friend_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove */
+        delete: operations["remove_api_me_friends__friend_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/friends/{friend_id}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compare */
+        get: operations["compare_api_me_friends__friend_id__compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/models/{name}": {
         parameters: {
             query?: never;
@@ -289,6 +411,112 @@ export interface components {
             exercises: {
                 [key: string]: string[];
             };
+            /** Muscles */
+            muscles: string[];
+            /** Muscle Groups */
+            muscle_groups: {
+                [key: string]: string;
+            };
+            /** Exercise Muscles */
+            exercise_muscles: {
+                [key: string]: components["schemas"]["ExerciseMuscles"];
+            };
+            /** Plan Templates */
+            plan_templates: components["schemas"]["PlanTemplate"][];
+        };
+        /** Comparison */
+        Comparison: {
+            me: components["schemas"]["Snapshot"];
+            friend: components["schemas"]["Snapshot"];
+        };
+        /** ExerciseLoad */
+        ExerciseLoad: {
+            /** Exercise */
+            exercise: string;
+            /** Sets */
+            sets?: number | null;
+            /** Reps */
+            reps?: number | null;
+            /** Weight Kg */
+            weight_kg?: number | null;
+        };
+        /** ExerciseMuscles */
+        ExerciseMuscles: {
+            /** Primary */
+            primary: string[];
+            /** Secondary */
+            secondary: string[];
+        };
+        /** ExerciseProgress */
+        ExerciseProgress: {
+            /** Exercise */
+            exercise: string;
+            /** Sessions */
+            sessions: number;
+            /** Best E1Rm */
+            best_e1rm: number | null;
+            /** First E1Rm */
+            first_e1rm: number | null;
+            /** Latest E1Rm */
+            latest_e1rm: number | null;
+            /** Change Pct */
+            change_pct: number | null;
+            /** History */
+            history: components["schemas"]["LiftPoint"][];
+        };
+        /** FriendRequestIn */
+        FriendRequestIn: {
+            /**
+             * Handle
+             * @description their email or friend code
+             */
+            handle: string;
+        };
+        /** FriendRequestResult */
+        FriendRequestResult: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "accepted";
+        };
+        /** FriendSummary */
+        FriendSummary: {
+            /** User Id */
+            user_id: number;
+            /** Name */
+            name: string;
+            /** Streak */
+            streak: number;
+            /** Longest Streak */
+            longest_streak: number;
+            /** Today Done */
+            today_done: boolean;
+            /** Week Sessions */
+            week_sessions: number;
+            /** Week Minutes */
+            week_minutes: number;
+            /** Four Week Minutes */
+            four_week_minutes: number;
+            /** Last Workout */
+            last_workout: string | null;
+        };
+        /** Friends */
+        Friends: {
+            /** Code */
+            code: string;
+            me: components["schemas"]["FriendSummary"];
+            /** Friends */
+            friends: components["schemas"]["FriendSummary"][];
+            /** Incoming */
+            incoming: components["schemas"]["PendingFriend"][];
+            /** Outgoing */
+            outgoing: components["schemas"]["PendingFriend"][];
+            /**
+             * Leaderboard
+             * @description user ids, most minutes this week first (you included)
+             */
+            leaderboard: number[];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -308,12 +536,95 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** LiftPoint */
+        LiftPoint: {
+            /** Date */
+            date: string;
+            /** E1Rm */
+            e1rm: number;
+            /** Weight Kg */
+            weight_kg: number;
+            /** Reps */
+            reps: number;
+        };
         /** LoginRequest */
         LoginRequest: {
             /** Email */
             email: string;
             /** Password */
             password: string;
+        };
+        /** MuscleProgress */
+        MuscleProgress: {
+            /** Muscle */
+            muscle: string;
+            /** Group */
+            group: string;
+            /** Sets This Week */
+            sets_this_week: number;
+            /** Sets Avg */
+            sets_avg: number;
+            /** Target Low */
+            target_low: number;
+            /** Target High */
+            target_high: number;
+            /**
+             * Volume Status
+             * @enum {string}
+             */
+            volume_status: "low" | "on_target" | "high";
+            /**
+             * Trend Pct
+             * @description sets in the last 4 weeks vs the 4 before
+             */
+            trend_pct: number | null;
+            /** Last Trained */
+            last_trained: string | null;
+            /** Days Since */
+            days_since: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "not_trained" | "recovering" | "ready" | "overdue";
+            /** Weekly */
+            weekly: components["schemas"]["MuscleWeek"][];
+            /** Exercises */
+            exercises: components["schemas"]["ExerciseProgress"][];
+        };
+        /** MuscleReport */
+        MuscleReport: {
+            /** Weeks */
+            weeks: string[];
+            /** Muscles */
+            muscles: components["schemas"]["MuscleProgress"][];
+            /** Total Sets This Week */
+            total_sets_this_week: number;
+            /** Sets Target */
+            sets_target: number[];
+        };
+        /** MuscleWeek */
+        MuscleWeek: {
+            /**
+             * Week
+             * @description the Monday of the week
+             */
+            week: string;
+            /** Sets */
+            sets: number;
+            /** Volume Kg */
+            volume_kg: number;
+            /** Sessions */
+            sessions: number;
+        };
+        /** PendingFriend */
+        PendingFriend: {
+            /** User Id */
+            user_id: number;
+            /** Name */
+            name: string;
+            /** Since */
+            since: string;
         };
         /** Persona */
         Persona: {
@@ -325,6 +636,99 @@ export interface components {
             distances: {
                 [key: string]: number;
             };
+        };
+        /** Plan */
+        Plan: {
+            /** Name */
+            name: string;
+            /**
+             * Days
+             * @description Monday to Sunday
+             */
+            days: components["schemas"]["PlanDay-Output"][];
+            /** Updated At */
+            updated_at: string;
+        };
+        /** PlanDay */
+        "PlanDay-Input": {
+            /** Label */
+            label: string;
+            /**
+             * Activity
+             * @enum {string}
+             */
+            activity: "Run" | "Walk" | "Cycle" | "Swim" | "Strength" | "HIIT" | "Yoga" | "Rest";
+            /**
+             * Focus
+             * @description muscles this day trains
+             */
+            focus?: string[];
+            /** Exercises */
+            exercises?: string[];
+        };
+        /** PlanDay */
+        "PlanDay-Output": {
+            /** Label */
+            label: string;
+            /**
+             * Activity
+             * @enum {string}
+             */
+            activity: "Run" | "Walk" | "Cycle" | "Swim" | "Strength" | "HIIT" | "Yoga" | "Rest";
+            /**
+             * Focus
+             * @description muscles this day trains
+             */
+            focus: string[];
+            /** Exercises */
+            exercises: string[];
+        };
+        /** PlanIn */
+        PlanIn: {
+            /** Name */
+            name: string;
+            /**
+             * Days
+             * @description Monday to Sunday
+             */
+            days: components["schemas"]["PlanDay-Input"][];
+        };
+        /** PlanTemplate */
+        PlanTemplate: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Days */
+            days: components["schemas"]["PlanDay-Output"][];
+        };
+        /** PlanWeek */
+        PlanWeek: {
+            plan: components["schemas"]["Plan"] | null;
+            /** Week */
+            week: components["schemas"]["PlanWeekDay"][];
+            /** Planned */
+            planned: number;
+            /** Done */
+            done: number;
+            today: components["schemas"]["PlanDay-Output"] | null;
+        };
+        /** PlanWeekDay */
+        PlanWeekDay: {
+            /** Date */
+            date: string;
+            /**
+             * Weekday
+             * @description 0 = Monday
+             */
+            weekday: number;
+            day: components["schemas"]["PlanDay-Output"] | null;
+            /** Today */
+            today: boolean;
+            /** Done */
+            done: boolean;
+            /** Workouts */
+            workouts: number[];
         };
         /** Profile */
         Profile: {
@@ -403,6 +807,11 @@ export interface components {
              */
             kind?: ("push" | "pull" | "legs") | null;
             /**
+             * Plan Day
+             * @description the day of the user's plan this workout was
+             */
+            plan_day?: string | null;
+            /**
              * Distance Km
              * @description for workouts without a GPS track
              */
@@ -415,6 +824,11 @@ export interface components {
             calories?: number | null;
             /** Exercises */
             exercises?: string[];
+            /**
+             * Loads
+             * @description optional sets / reps / kg per exercise
+             */
+            loads?: components["schemas"]["ExerciseLoad"][];
             /** Title */
             title?: string | null;
             /**
@@ -500,6 +914,95 @@ export interface components {
              */
             vo2max?: number | null;
         };
+        /** Snapshot */
+        Snapshot: {
+            /** User Id */
+            user_id: number;
+            /** Name */
+            name: string;
+            /** Streak */
+            streak: number;
+            /** Longest Streak */
+            longest_streak: number;
+            /** Today Done */
+            today_done: boolean;
+            /** Week Sessions */
+            week_sessions: number;
+            /** Week Minutes */
+            week_minutes: number;
+            /** Four Week Minutes */
+            four_week_minutes: number;
+            /** Last Workout */
+            last_workout: string | null;
+            /** Level */
+            level: string;
+            /** Persona */
+            persona: string;
+            /** Stats */
+            stats: {
+                [key: string]: number | null;
+            };
+            /** Weekly */
+            weekly: components["schemas"]["WeekTotal"][];
+            /**
+             * Muscle Sets
+             * @description average sets per week over the last 4 weeks
+             */
+            muscle_sets: {
+                [key: string]: number;
+            };
+        };
+        /** Streak */
+        Streak: {
+            /** Current */
+            current: number;
+            /** Longest */
+            longest: number;
+            /** Today Done */
+            today_done: boolean;
+            /**
+             * At Risk
+             * @description a streak is running but nothing is logged today yet
+             */
+            at_risk: boolean;
+            /** Rest Weekdays */
+            rest_weekdays: number[];
+            /** Week */
+            week: components["schemas"]["StreakWeekDay"][];
+            /**
+             * This Week Sessions
+             * @description days trained this week
+             */
+            this_week_sessions: number;
+            /** Weekly Goal */
+            weekly_goal: number | null;
+            /** Active Days Total */
+            active_days_total: number;
+            /**
+             * Days
+             * @description every day trained in the last 400 days
+             */
+            days: components["schemas"]["StreakDay"][];
+        };
+        /** StreakDay */
+        StreakDay: {
+            /** Date */
+            date: string;
+            /** Workouts */
+            workouts: number;
+            /** Minutes */
+            minutes: number;
+        };
+        /** StreakWeekDay */
+        StreakWeekDay: {
+            /** Date */
+            date: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "done" | "rest" | "today" | "upcoming" | "missed";
+        };
         /** TrackPoint */
         TrackPoint: {
             /**
@@ -557,11 +1060,25 @@ export interface components {
             /** Calories */
             calories: number;
         };
+        /** WeekTotal */
+        WeekTotal: {
+            /** Week */
+            week: string;
+            /** Minutes */
+            minutes: number;
+            /** Sessions */
+            sessions: number;
+        };
         /** WorkoutDetail */
         WorkoutDetail: {
             workout: components["schemas"]["WorkoutItem"];
             /** Exercises */
             exercises: string[];
+            /**
+             * Loads
+             * @description sets, reps and weight where they were logged
+             */
+            loads: components["schemas"]["ExerciseLoad"][];
             /** Hr */
             hr: number[];
             /** Dt */
@@ -1047,6 +1564,337 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserRoutes"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    plan_api_me_plan_get: {
+        parameters: {
+            query?: {
+                today?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanWeek"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_plan_api_me_plan_put: {
+        parameters: {
+            query?: {
+                today?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanWeek"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_plan_api_me_plan_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    streak_api_me_streak_get: {
+        parameters: {
+            query?: {
+                today?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Streak"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    muscles_api_me_muscles_get: {
+        parameters: {
+            query?: {
+                today?: string | null;
+                weeks?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MuscleReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    friends_api_me_friends_get: {
+        parameters: {
+            query?: {
+                today?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Friends"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_api_me_friends_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FriendRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FriendRequestResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_api_me_friends__friend_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                friend_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_api_me_friends__friend_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                friend_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_api_me_friends__friend_id__compare_get: {
+        parameters: {
+            query?: {
+                today?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                friend_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comparison"];
                 };
             };
             /** @description Validation Error */

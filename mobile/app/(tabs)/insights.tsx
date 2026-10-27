@@ -21,7 +21,7 @@ export default function Insights() {
   const maxD = dist.length ? Math.max(...dist.map((d) => d[1])) : 1;
 
   return (
-    <Screen title="Insights" subtitle="What your training says, and what to try next" refreshing={recs.loading} onRefresh={refresh}>
+    <Screen back title="Insights" subtitle="What your training says, and what to try next" refreshing={recs.loading} onRefresh={refresh}>
       <Card>
         <H2>Try next</H2>
         <P muted small style={{ marginBottom: space.sm }}>Exercises that people usually add to the ones in your recent workouts.</P>

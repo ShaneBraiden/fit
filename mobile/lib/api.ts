@@ -15,8 +15,18 @@ export type UserRoutes = S['UserRoutes'];
 export type RecordRequest = S['RecordRequest'];
 export type RecordResult = S['RecordResult'];
 export type Catalog = S['Catalog'];
+export type ExerciseLoad = S['ExerciseLoad'];
+export type PlanDay = S['PlanDay-Output'];
+export type PlanIn = S['PlanIn'];
+export type PlanWeek = S['PlanWeek'];
+export type Streak = S['Streak'];
+export type MuscleReport = S['MuscleReport'];
+export type MuscleProgress = S['MuscleProgress'];
+export type Friends = S['Friends'];
+export type FriendSummary = S['FriendSummary'];
+export type Comparison = S['Comparison'];
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export class ApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -111,6 +121,10 @@ export const fmt = {
   time: (iso: string) => new Date(iso.replace(' ', 'T')).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
   reason: (r: string) => r.split(', ').filter(Boolean).map((x) => REASONS[x] ?? REASON_PREFIX(x)).join(' · '),
 };
+
+/** Today's local date, "YYYY-MM-DD": the streak and the week follow the phone's calendar. */
+export const todayIso = () => localIso(new Date()).slice(0, 10);
+export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 /** Local time as the server expects it: "YYYY-MM-DDTHH:MM:SS", no time zone. */
 export function localIso(d: Date): string {

@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TextInputProps, TextStyle, View,
   ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { radius, space, type, useTheme } from '../lib/theme';
 
-export function Screen({ children, refreshing, onRefresh, title, subtitle, right }: {
+export function Screen({ children, refreshing, onRefresh, title, subtitle, right, back }: {
   children: ReactNode; refreshing?: boolean; onRefresh?: () => void; title?: string; subtitle?: string; right?: ReactNode;
+  back?: boolean;
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -16,6 +18,12 @@ export function Screen({ children, refreshing, onRefresh, title, subtitle, right
       refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={t.accent} /> : undefined}>
       {title && (
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: space.xs }}>
+          {back && (
+            <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/today'))} accessibilityRole="button"
+              accessibilityLabel="Back" hitSlop={10} style={{ marginRight: space.sm, paddingBottom: 2 }}>
+              <Ionicons name="chevron-back" size={24} color={t.text} />
+            </Pressable>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={[type.title, { color: t.text }]}>{title}</Text>
             {subtitle && <Text style={[type.small, { color: t.text2, marginTop: 2 }]}>{subtitle}</Text>}

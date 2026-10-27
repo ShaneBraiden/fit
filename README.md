@@ -9,6 +9,13 @@ Users sign up, record workouts on their phone (GPS tracking for runs, walks and 
 - **Data checks**: GPS glitches, impossible speeds and copied recordings are flagged and left out of their stats
 - **Routes**: popular routes near them, and the phases (warm-up, fast, recovery…) inside each run
 
+And training features built on their own logs:
+
+- **Muscles**: hard sets per muscle each week on a front/back body map, against a 10–20 sets target, with recovery status and estimated one-rep max per exercise (Epley) when sets, reps and kg are logged
+- **Streak**: days in a row with a counted workout, a month calendar, and this week at a glance; rest days in the user's plan keep the streak alive
+- **Weekly plan**: any split (push/pull/legs, upper/lower, full body, body-part, Arnold, hybrid lift + run, or their own), each day with its focus muscles and exercises; logging a workout offers the plan's days
+- **Friends**: add by email or friend code, a weekly leaderboard, and side-by-side comparison (streak, weekly minutes, level, sets per muscle). Friends never see single workouts or GPS tracks
+
 It has three parts:
 
 | Part | Folder | What it is |
@@ -53,7 +60,8 @@ python -m venv .venv
 - **Pipeline options:** `--seed`, `--users` and `--skip-verify`. A full run takes about 3 minutes.
 - **API docs:** http://localhost:8000/docs
 - **Tests:** `.venv\Scripts\python -m pytest tests`. They always use the local SQLite file, never `DATABASE_URL`; the API tests need the pipeline to have run first.
-- **What the pipeline rebuilds:** only the synthetic training tables. Accounts and the workouts users record (`accounts`, `auth_tokens`, `live_users`, `live_workouts`, `live_exercises`, `live_streams`) are never touched.
+- **What the pipeline rebuilds:** only the synthetic training tables. Accounts and the workouts users record (`accounts`, `auth_tokens`, `live_users`, `live_workouts`, `live_exercises`, `live_streams`, `training_plans`, `friend_codes`, `friendships`) are never touched.
+- **Schema upgrades:** on start-up the API creates any missing tables and adds new columns to existing ones (`live_exercises.sets/reps/weight_kg`, `live_workouts.plan_day`), so an existing database needs no manual migration.
 
 ### Accounts and security
 
@@ -115,9 +123,13 @@ server/
   fitmine/pipeline.py    trains everything, writes artifacts/*.json and artifacts/models.pkl
   fitmine/models_runtime.py  applies the trained models to one user's workouts
   fitmine/live.py        accounts, tokens, the user's own workouts, the live profile
-  api/                   FastAPI: routers/account.py (auth + /api/me), routers/models.py (admin model reports)
+  fitmine/training.py    muscle map and progress, streak, weekly plans and their templates
+  fitmine/friends.py     friend codes, requests, leaderboard and comparison
+  api/                   FastAPI: routers/account.py (auth + /api/me), routers/training.py (plan, streak, muscles),
+                         routers/friends.py, routers/models.py (admin model reports)
   tests/                 pytest
-web/src/pages/app/       Today, Log, Insights, Routes, Profile, Workout
+web/src/pages/app/       Today, Log, Plan, Streak, Muscles, Friends (+ compare), Insights, Routes, Profile, Workout
 web/src/pages/models/    admin model pages, one per feature, and Verification
-mobile/app/              expo-router screens: sign-in, tabs (today, record, insights, routes, profile), workout/[id]
+mobile/app/              expo-router screens: sign-in, tabs (today, record, muscles, friends, profile; plan, streak, insights
+                         and routes open from Today), workout/[id], friend/[id] (compare)
 ```

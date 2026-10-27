@@ -7,7 +7,7 @@ so accounts and recorded workouts survive every redeploy:
   auth_tokens    sha-256 of each sign-in token, with an expiry
   live_users     the profile the user entered (age, body, optional resting HR / VO2max)
   live_workouts  each recorded or logged workout, with its data-check verdict and route
-  live_exercises the exercises done in each workout
+  live_exercises the exercises done in each workout, with optional sets, reps and weight
   live_streams   resampled GPS (and HR when available) streams, same encoding as `streams`
 
 The models trained on the synthetic population are applied to these rows: the
@@ -62,6 +62,9 @@ def ensure_tables(con):
             con.execute(sql)
         con.commit()
     store.write_streams({}, con, if_exists="append", table="live_streams")
+    from . import friends, training  # they build on these tables
+    training.ensure_tables(con)
+    friends.ensure_tables(con)
     _ready = True
 
 
@@ -322,11 +325,13 @@ def record(con, user_id: int, req: dict) -> dict:
     has_gps = stream is not None
     speed = distance / (duration / 60) if distance else None
     pace = duration / distance if distance and activity in ("Run", "Walk") else None
-    ex = sorted(set(req.get("exercises") or []))
+    loads = {x["exercise"]: x for x in req.get("loads") or []}
+    ex = sorted(set(req.get("exercises") or []) | set(loads))
     if activity in G.CARDIO_ITEM:
         ex = sorted(set(ex) | {G.CARDIO_ITEM[activity]})
     seg = RT.segment(stream) if stream is not None else None
-    stype = session_type(activity, req.get("kind"), ex, seg, duration, distance)
+    plan_day = (req.get("plan_day") or "").strip() or None
+    stype = session_type(activity, req.get("kind") or plan_day, ex, seg, duration, distance)
     calories = req.get("calories") or round(expected_calories(activity, float(u.weight_kg), duration, speed), 1)
     check_stream = stream or {"hr": np.zeros(0, int), "lat": None, "lon": None}
     verdict = RT.score_workout(u, activity, float(calories), duration, check_stream, -int(user_id))
@@ -337,13 +342,15 @@ def record(con, user_id: int, req: dict) -> dict:
         con.execute(
             "INSERT INTO live_workouts (workout_id, user_id, activity, session_type, title, start_time, duration_min, "
             "distance_km, avg_hr, max_hr, calories, speed_kmh, pace_min_km, has_gps, source, flagged, reasons, "
-            "route_name, start_lat, start_lon) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (wid, int(user_id), activity, stype, (req.get("title") or "").strip() or G.SESSION_TITLES[stype][0],
+            "route_name, start_lat, start_lon, plan_day) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (wid, int(user_id), activity, stype,
+             (req.get("title") or "").strip() or plan_day or G.SESSION_TITLES[stype][0],
              start, duration, distance, req.get("avg_hr"), req.get("max_hr"), float(calories), speed, pace, has_gps,
              "gps" if has_gps else "manual", verdict["flagged"], ", ".join(verdict["reasons"]),
              None if route is None else route["name"],
-             float(stream["lat"][0]) if has_gps else None, float(stream["lon"][0]) if has_gps else None))
-        con.executemany("INSERT INTO live_exercises (workout_id, exercise) VALUES (?, ?)", [(wid, e) for e in ex])
+             float(stream["lat"][0]) if has_gps else None, float(stream["lon"][0]) if has_gps else None, plan_day))
+        con.executemany("INSERT INTO live_exercises (workout_id, exercise, sets, reps, weight_kg) VALUES (?,?,?,?,?)",
+                        [(wid, e, *(loads.get(e, {}).get(k) for k in ("sets", "reps", "weight_kg"))) for e in ex])
         con.commit()
     if stream is not None:
         store.write_streams({wid: stream}, con, if_exists="append", table="live_streams")

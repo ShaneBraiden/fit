@@ -15,6 +15,8 @@ function Root() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="workout/[id]" options={{ headerShown: true, title: 'Workout', headerStyle: { backgroundColor: t.surface },
           headerTintColor: t.text, headerShadowVisible: false }} />
+        <Stack.Screen name="friend/[id]" options={{ headerShown: true, title: 'Compare', headerStyle: { backgroundColor: t.surface },
+          headerTintColor: t.text, headerShadowVisible: false }} />
       </Stack>
     </>
   );

@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from fitmine import config as C
 from fitmine import live
 from fitmine import models_runtime as RT
+from fitmine import training as TR
 from fitmine.analyses.common import jsonable
 from fitmine.data import generator as G
 from fitmine.data import geo, store
@@ -106,7 +107,8 @@ def update_me(req: ProfileUpdate, uid: int = Depends(current_user), con=Depends(
 @router.get("/catalog", response_model=Catalog)
 def catalog():
     extras = ["Plank", "Stretching", "Foam Rolling"]
-    strength = sorted({e for s in ("Push", "Pull", "Legs") for e, _ in G.TEMPLATES[s]} | {"Leg Curl", *extras})
+    strength = sorted({e for s in ("Push", "Pull", "Legs") for e, _ in G.TEMPLATES[s]} | {"Leg Curl", *extras}
+                      | set(TR.EXTRA_EXERCISES))
     return {
         "activities": C.ACTIVITIES, "gps_activities": sorted(C.GPS_ACTIVITIES),
         "exercises": {
@@ -115,6 +117,9 @@ def catalog():
             "Yoga": [e for e, _ in G.TEMPLATES["Yoga"]] + ["Stretching"],
             **{a: ["Stretching", "Foam Rolling"] for a in ("Run", "Walk", "Cycle", "Swim")},
         },
+        "muscles": TR.MUSCLES, "muscle_groups": TR.MUSCLE_GROUP,
+        "exercise_muscles": {e: {"primary": p, "secondary": s} for e, (p, s) in TR.EXERCISE_MUSCLES.items()},
+        "plan_templates": TR.templates(),
     }
 
 
@@ -136,7 +141,12 @@ def _detail(con, uid: int, workout_id: int) -> dict:
     if df.empty:
         raise HTTPException(404, "Workout not found.")
     s = store.load_stream(con, workout_id, "live_streams")
-    out = {"workout": _items(df)[0], "exercises": live.exercises(con, [workout_id]).exercise.tolist(),
+    ex = live.exercises(con, [workout_id])
+    loads = [{"exercise": r.exercise, "sets": None if pd.isna(r.sets) else int(r.sets),
+              "reps": None if pd.isna(r.reps) else int(r.reps),
+              "weight_kg": None if pd.isna(r.weight_kg) else float(r.weight_kg)}
+             for r in ex.itertuples() if pd.notna(r.sets) or pd.notna(r.reps) or pd.notna(r.weight_kg)]
+    out = {"workout": _items(df)[0], "exercises": ex.exercise.tolist(), "loads": loads,
            "hr": [] if s is None else s["hr"].astype(int).tolist(), "dt": C.STREAM_INTERVAL_S, "lat": None,
            "lon": None, "speed_kmh": None, "segments": None, "run_kind": None, "route": None}
     if s is not None and s["lat"] is not None:
@@ -172,13 +182,13 @@ def delete_workout(workout_id: int, uid: int = Depends(current_user), con=Depend
 
 @router.post("/me/workouts", response_model=RecordResult)
 def record(req: RecordRequest, uid: int = Depends(current_user), con=Depends(db)):
-    known = set(G.ALL_EXERCISES)
-    unknown = [e for e in req.exercises if e not in known]
+    unknown = [e for e in [*req.exercises, *(x.exercise for x in req.loads)] if e not in TR.KNOWN_EXERCISES]
     if unknown:
         raise HTTPException(422, f"Unknown exercise: {', '.join(unknown)}")
     body = req.model_dump()
     body["start_time"] = (req.start_time.replace(tzinfo=None).strftime(live.TS) if req.start_time else None)
     body["track"] = [p.model_dump() for p in req.track] if req.track else None
+    body["loads"] = [x.model_dump() for x in req.loads]
     r = live.record(con, uid, body)
     return {
         "workout": _items(live.workouts(con, uid, "AND workout_id=?", (r["workout_id"],)))[0],

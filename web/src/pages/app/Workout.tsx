@@ -37,7 +37,11 @@ export default function Workout() {
           <div className="note">{w.flagged ? `${reasonText(w.reasons)}. This workout doesn't count towards your stats.` : 'Nothing unusual in this workout.'}</div>
         </Card>
         {d.data.exercises.length > 0 && (
-          <Card title="Exercises"><div className="chips">{d.data.exercises.map((e) => <span key={e} className="chip">{e}</span>)}</div></Card>
+          <Card title="Exercises"><div className="chips">{d.data.exercises.map((e) => {
+            const l = d.data!.loads.find((x) => x.exercise === e);
+            const detail = l ? [l.sets && `${l.sets}×${l.reps ?? '?'}`, l.weight_kg != null && `${fmt.n(l.weight_kg, 1)} kg`].filter(Boolean).join(' @ ') : '';
+            return <span key={e} className="chip">{e}{detail ? ` · ${detail}` : ''}</span>;
+          })}</div></Card>
         )}
       </div>
       {d.data.lat && d.data.lon && (

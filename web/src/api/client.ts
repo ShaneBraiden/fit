@@ -14,6 +14,16 @@ export type UserRoutes = S['UserRoutes'];
 export type RecordRequest = S['RecordRequest'];
 export type RecordResult = S['RecordResult'];
 export type Catalog = S['Catalog'];
+export type ExerciseLoad = S['ExerciseLoad'];
+export type PlanDay = S['PlanDay-Output'];
+export type PlanIn = S['PlanIn'];
+export type PlanWeek = S['PlanWeek'];
+export type Streak = S['Streak'];
+export type MuscleReport = S['MuscleReport'];
+export type MuscleProgress = S['MuscleProgress'];
+export type Friends = S['Friends'];
+export type FriendSummary = S['FriendSummary'];
+export type Comparison = S['Comparison'];
 
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
 
@@ -35,7 +45,7 @@ export class ApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
 }
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export async function api<T>(path: string, body?: unknown, method?: Method): Promise<T> {
   const token = getToken();
@@ -91,6 +101,10 @@ export function localIso(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
+
+/** Today's local date, "YYYY-MM-DD": the streak and the week follow the user's calendar. */
+export const todayIso = () => localIso(new Date()).slice(0, 10);
+export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const when = {
   date: (iso: string | null | undefined) => (iso ? new Date(iso.replace(' ', 'T'))

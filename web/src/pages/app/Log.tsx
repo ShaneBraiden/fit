@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, Fragment, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, Catalog, localIso, pace, reasonText, RecordRequest, RecordResult, splitWords, useGet, when } from '../../api/client';
+import { api, Catalog, localIso, pace, PlanDay, PlanWeek, reasonText, RecordRequest, RecordResult, splitWords, todayIso, useGet,
+  when } from '../../api/client';
 import { activityIcon, TrackMap } from '../../components/fitness';
 import { Card, PageHead, Pill, Tile } from '../../components/ui';
 import { fmt } from '../../theme/chart';
@@ -10,6 +11,8 @@ type Fix = { t: number; lat: number; lon: number; accuracy: number | null };
 const ACTIVITIES: Activity[] = ['Run', 'Walk', 'Cycle', 'Swim', 'Strength', 'HIIT', 'Yoga'];
 const GPS = new Set<Activity>(['Run', 'Walk', 'Cycle']);
 const MAX_ACCURACY_M = 35;
+const SPLITS = ['push', 'pull', 'legs'];
+type Load = { sets: string; reps: string; kg: string };
 
 function haversine(a: Fix, b: Fix): number {
   const r = Math.PI / 180;
@@ -64,14 +67,34 @@ function Manual({ activity, busy, onSubmit }: { activity: Activity; busy: boolea
   const catalog = useGet<Catalog>('/api/catalog');
   const [start, setStart] = useState(() => localIso(new Date()).slice(0, 16));
   const [f, setF] = useState({ duration: '', distance: '', hr: '', calories: '', title: '' });
-  const [split, setSplit] = useState<RecordRequest['kind']>(null);
+  const plan = useGet<PlanWeek>(`/api/me/plan?today=${todayIso()}`);
+  const [planDay, setPlanDay] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
+  const [loads, setLoads] = useState<Record<string, Load>>({});
   const [problem, setProblem] = useState<string | null>(null);
-  useEffect(() => { setPicked([]); setSplit(null); }, [activity]);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
   const num = (s: string) => (s.trim() === '' ? null : Number(s));
   const hasDistance = GPS.has(activity) || activity === 'Swim';
   const options = catalog.data?.exercises[activity] ?? [];
+  // The user's own split days for this activity; push/pull/legs until they make a plan.
+  const days: PlanDay[] = (() => {
+    const mine = (plan.data?.plan?.days ?? []).filter((d) => d.activity === activity);
+    const fallback = activity === 'Strength' ? catalog.data?.plan_templates.find((t) => t.key === 'ppl')?.days ?? [] : [];
+    const all = mine.length ? mine : fallback.filter((d) => d.activity === activity);
+    return all.filter((d, i) => all.findIndex((x) => x.label === d.label) === i);
+  })();
+  const choose = (d: PlanDay | null) => {
+    setPlanDay(d?.label ?? null);
+    if (d) setPicked((p) => Array.from(new Set([...p, ...d.exercises.filter((e) => options.includes(e))])));
+  };
+  useEffect(() => { setPicked([]); setPlanDay(null); setLoads({}); }, [activity]);
+  // Today's planned day is picked for you when it matches the activity.
+  useEffect(() => {
+    const today = plan.data?.today;
+    if (today && today.activity === activity && options.length) choose(today);
+  }, [plan.data, activity, options.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lifted = picked.filter((e) => (catalog.data?.exercise_muscles[e]?.primary.length ?? 0) > 0);
+  const setLoad = (e: string, k: keyof Load, v: string) => setLoads((l) => ({ ...l, [e]: { ...(l[e] ?? { sets: '', reps: '', kg: '' }), [k]: v } }));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -79,9 +102,12 @@ function Manual({ activity, busy, onSubmit }: { activity: Activity; busy: boolea
     const mins = num(f.duration);
     if (!mins || mins <= 0) { setProblem('Enter how many minutes the workout took.'); return; }
     if (new Date(start).getTime() > Date.now()) { setProblem('That start time is in the future.'); return; }
-    const ok = await onSubmit({ activity, start_time: `${start}:00`, duration_min: mins, kind: split, title: f.title.trim() || null,
-      distance_km: hasDistance ? num(f.distance) : null, avg_hr: num(f.hr), calories: num(f.calories), exercises: picked });
-    if (ok) { setF({ duration: '', distance: '', hr: '', calories: '', title: '' }); setPicked([]); }
+    const kind = planDay && SPLITS.includes(planDay.toLowerCase()) ? planDay.toLowerCase() as RecordRequest['kind'] : null;
+    const body = lifted.filter((e) => loads[e] && (loads[e].sets || loads[e].reps || loads[e].kg))
+      .map((e) => ({ exercise: e, sets: num(loads[e].sets), reps: num(loads[e].reps), weight_kg: num(loads[e].kg) }));
+    const ok = await onSubmit({ activity, start_time: `${start}:00`, duration_min: mins, kind, plan_day: planDay, title: f.title.trim() || null,
+      distance_km: hasDistance ? num(f.distance) : null, avg_hr: num(f.hr), calories: num(f.calories), exercises: picked, loads: body });
+    if (ok) { setF({ duration: '', distance: '', hr: '', calories: '', title: '' }); setPicked([]); setLoads({}); }
   };
 
   return (
@@ -99,14 +125,15 @@ function Manual({ activity, busy, onSubmit }: { activity: Activity; busy: boolea
             <label className="field"><span>Calories</span><input inputMode="numeric" value={f.calories} onChange={set('calories')} /><span className="hint">Optional; we estimate it</span></label>
             <label className="field"><span>Title</span><input value={f.title} onChange={set('title')} maxLength={60} /><span className="hint">Optional</span></label>
           </div>
-          {activity === 'Strength' && (
-            <div className="field"><span>Session</span>
+          {days.length > 0 && (
+            <div className="field"><span>{plan.data?.plan ? `Day of your plan (${plan.data.plan.name})` : 'Session'}</span>
               <div className="chips">
-                {(['push', 'pull', 'legs'] as const).map((k) => (
-                  <button key={k} type="button" className={`chip toggle ${split === k ? 'on' : ''}`} onClick={() => setSplit(split === k ? null : k)}>
-                    {k[0].toUpperCase() + k.slice(1)}</button>
+                {days.map((d) => (
+                  <button key={d.label} type="button" className={`chip toggle ${planDay === d.label ? 'on' : ''}`}
+                    onClick={() => choose(planDay === d.label ? null : d)}>{d.label}{plan.data?.today?.label === d.label ? ' · today' : ''}</button>
                 ))}
               </div>
+              {!plan.data?.plan && <span className="hint"><Link to="/plan">Make your own split</Link>: upper/lower, full body, arms day…</span>}
             </div>
           )}
         </div>
@@ -118,6 +145,19 @@ function Manual({ activity, busy, onSubmit }: { activity: Activity; busy: boolea
               <button key={x} type="button" className={`chip toggle ${picked.includes(x) ? 'on' : ''}`}
                 onClick={() => setPicked((p) => (p.includes(x) ? p.filter((y) => y !== x) : [...p, x]))}>{x}</button>
             ))}
+          </div>
+        </Card>
+      )}
+      {lifted.length > 0 && (
+        <Card title="Sets, reps and weight" sub="Optional. Your Muscles page uses them to track strength; without them each exercise counts as 3 sets.">
+          <div className="loads">
+            <span className="muted">Exercise</span><span className="muted">Sets</span><span className="muted">Reps</span><span className="muted">kg</span>
+            {lifted.map((e) => <Fragment key={e}>
+              <span>{e}</span>
+              <input inputMode="numeric" aria-label={`${e} sets`} placeholder="3" value={loads[e]?.sets ?? ''} onChange={(x) => setLoad(e, 'sets', x.target.value)} />
+              <input inputMode="numeric" aria-label={`${e} reps`} placeholder="10" value={loads[e]?.reps ?? ''} onChange={(x) => setLoad(e, 'reps', x.target.value)} />
+              <input inputMode="decimal" aria-label={`${e} weight in kg`} placeholder="–" value={loads[e]?.kg ?? ''} onChange={(x) => setLoad(e, 'kg', x.target.value)} />
+            </Fragment>)}
           </div>
         </Card>
       )}

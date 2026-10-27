@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Alert, pace, Profile, reasonText, useGet, WorkoutItem } from '../../api/client';
+import { Alert, pace, PlanWeek, Profile, reasonText, Streak, todayIso, useGet, WorkoutItem } from '../../api/client';
 import { useAuth } from '../../auth';
 import { LevelBars, levelColor, WeeklyChart, WorkoutRow } from '../../components/fitness';
 import { Card, ErrorBox, Loading, PageHead, Pill, Tile } from '../../components/ui';
 import { fmt, usePalette } from '../../theme/chart';
+import { StreakBadge } from './Streak';
 
 export default function Today() {
   const p = usePalette();
@@ -11,6 +12,8 @@ export default function Today() {
   const prof = useGet<Profile>('/api/me/profile');
   const ws = useGet<WorkoutItem[]>('/api/me/workouts?limit=8');
   const alerts = useGet<Alert[]>('/api/me/alerts');
+  const streak = useGet<Streak>(`/api/me/streak?today=${todayIso()}`);
+  const plan = useGet<PlanWeek>(`/api/me/plan?today=${todayIso()}`);
   if (prof.error) return <ErrorBox error={prof.error} />;
   if (!prof.data) return <Loading />;
   const d = prof.data;
@@ -24,6 +27,12 @@ export default function Today() {
           <Link className="btn primary" to="/log" style={{ display: 'inline-block', textDecoration: 'none' }}>Log a workout</Link>
         </Card>
       )}
+      <div className="grid g2" style={{ marginTop: 16 }}>
+        <Card title="Streak" actions={<Link to="/streak">Calendar ›</Link>}>
+          {streak.data ? <StreakBadge s={streak.data} compact /> : <Loading />}
+        </Card>
+        <TodayPlan pw={plan.data} />
+      </div>
       <div className="grid g4" style={{ marginTop: 16 }}>
         <Tile label="Sessions / week" value={fmt.n(d.stats.sessions_per_week, 1)} />
         <Tile label="Minutes / week" value={fmt.n(d.stats.minutes_per_week)} />
@@ -64,5 +73,30 @@ export default function Today() {
         </div>
       )}
     </>
+  );
+}
+
+function TodayPlan({ pw }: { pw: PlanWeek | null }) {
+  if (!pw) return <Card title="Today's plan"><Loading /></Card>;
+  const day = pw.today;
+  const done = pw.week.find((d) => d.today)?.done;
+  if (!pw.plan || !day) {
+    return (
+      <Card title="Today's plan" sub="Set up your week: push/pull/legs, upper/lower, full body, or your own split.">
+        <Link className="btn primary" to="/plan" style={{ display: 'inline-block', textDecoration: 'none' }}>Make a weekly plan</Link>
+      </Card>
+    );
+  }
+  return (
+    <Card title="Today's plan" sub={`${pw.plan.name} · ${pw.done} of ${pw.planned} days done this week`} actions={<Link to="/plan">Week ›</Link>}>
+      <div style={{ fontSize: 22, fontWeight: 600 }}>{day.activity === 'Rest' ? '😴 Rest day' : day.label}</div>
+      {day.activity !== 'Rest' && <>
+        {day.focus.length > 0 && <div className="note">{day.focus.join(', ')}</div>}
+        {day.exercises.length > 0 && <div className="chips" style={{ marginTop: 8 }}>{day.exercises.map((e) => <span key={e} className="chip">{e}</span>)}</div>}
+        <div style={{ marginTop: 10 }}>{done ? <Pill kind="good">Done today</Pill>
+          : <Link className="btn primary small" to="/log" style={{ textDecoration: 'none' }}>Log {day.label}</Link>}</div>
+      </>}
+      {day.activity === 'Rest' && <div className="note">Recover today. Your streak is safe.</div>}
+    </Card>
   );
 }

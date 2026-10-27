@@ -20,7 +20,7 @@ export default function Routes() {
   const mine = popular.filter((p) => used[p.name]);
 
   return (
-    <Screen title="Routes" subtitle="Your GPS workouts, and popular routes near you" refreshing={r.loading} onRefresh={r.reload}>
+    <Screen back title="Routes" subtitle="Your GPS workouts, and popular routes near you" refreshing={r.loading} onRefresh={r.reload}>
       {r.error ? <ErrorState message={r.error} onRetry={r.reload} /> : !r.data ? <Skeleton lines={6} /> : (
         <>
           {popular.length > 0 && (

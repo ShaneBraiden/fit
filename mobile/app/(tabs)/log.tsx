@@ -3,10 +3,10 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { TextInput, View } from 'react-native';
 import { RouteMap, SpeedChart } from '../../components/charts';
 import { Button, Card, Chip, Divider, ErrorState, Field, H2, P, Pill, Row, Screen, Stat } from '../../components/ui';
-import { Catalog, fmt, localIso, RecordRequest, RecordResult, useApi, useFetch } from '../../lib/api';
+import { Catalog, fmt, localIso, PlanDay, PlanWeek, RecordRequest, RecordResult, todayIso, useApi, useFetch } from '../../lib/api';
 import { ACTIVITY_ICON, space, useTheme } from '../../lib/theme';
 
 type Activity = RecordRequest['activity'];
@@ -14,8 +14,8 @@ type Fix = { t: number; lat: number; lon: number; accuracy: number | null };
 
 const ACTIVITIES: Activity[] = ['Run', 'Walk', 'Cycle', 'Swim', 'Strength', 'HIIT', 'Yoga'];
 const GPS = new Set<Activity>(['Run', 'Walk', 'Cycle']);
-const SPLITS: { key: NonNullable<RecordRequest['kind']>; label: string }[] = [
-  { key: 'push', label: 'Push' }, { key: 'pull', label: 'Pull' }, { key: 'legs', label: 'Legs' }];
+const SPLITS = ['push', 'pull', 'legs'];
+type Load = { sets: string; reps: string; kg: string };
 const DAYS = [{ label: 'Today', back: 0 }, { label: 'Yesterday', back: 1 }, { label: '2 days ago', back: 2 }];
 const MAX_ACCURACY_M = 35; // the server drops fixes worse than this too
 
@@ -205,13 +205,33 @@ function ManualForm({ activity, busy, onSubmit }: { activity: Activity; busy: bo
   const [distance, setDistance] = useState('');
   const [avgHr, setAvgHr] = useState('');
   const [calories, setCalories] = useState('');
-  const [split, setSplit] = useState<RecordRequest['kind']>(null);
+  const plan = useFetch<PlanWeek>(`/api/me/plan?today=${todayIso()}`);
+  const [planDay, setPlanDay] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
+  const [loads, setLoads] = useState<Record<string, Load>>({});
   const [problem, setProblem] = useState<string | null>(null);
-  useEffect(() => { setPicked([]); setSplit(null); }, [activity]);
 
   const options = catalog.data?.exercises[activity] ?? [];
   const num = (s: string) => (s.trim() === '' ? null : Number(s.replace(',', '.')));
+  // The user's own split days for this activity; push/pull/legs until they make a plan.
+  const days: PlanDay[] = (() => {
+    const mine = (plan.data?.plan?.days ?? []).filter((d) => d.activity === activity);
+    const fallback = activity === 'Strength' ? catalog.data?.plan_templates.find((x) => x.key === 'ppl')?.days ?? [] : [];
+    const all = mine.length ? mine : fallback.filter((d) => d.activity === activity);
+    return all.filter((d, i) => all.findIndex((x) => x.label === d.label) === i);
+  })();
+  const choose = (d: PlanDay | null) => {
+    setPlanDay(d?.label ?? null);
+    if (d) setPicked((p) => Array.from(new Set([...p, ...d.exercises.filter((e) => options.includes(e))])));
+  };
+  useEffect(() => { setPicked([]); setPlanDay(null); setLoads({}); }, [activity]);
+  // Today's planned day is picked for you when it matches the activity.
+  useEffect(() => {
+    const today = plan.data?.today;
+    if (today && today.activity === activity && options.length) choose(today);
+  }, [plan.data, activity, options.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lifted = picked.filter((e) => (catalog.data?.exercise_muscles[e]?.primary.length ?? 0) > 0);
+  const setLoad = (e: string, k: keyof Load, v: string) => setLoads((l) => ({ ...l, [e]: { ...(l[e] ?? { sets: '', reps: '', kg: '' }), [k]: v } }));
   const submit = async () => {
     setProblem(null);
     const mins = num(duration);
@@ -222,10 +242,13 @@ function ManualForm({ activity, busy, onSubmit }: { activity: Activity; busy: bo
     start.setDate(start.getDate() - day);
     start.setHours(Number(m[1]), Number(m[2]), 0, 0);
     if (start.getTime() > Date.now()) return setProblem('That start time is in the future.');
-    const ok = await onSubmit({ activity, start_time: localIso(start), duration_min: mins, kind: split,
+    const kind = planDay && SPLITS.includes(planDay.toLowerCase()) ? planDay.toLowerCase() as RecordRequest['kind'] : null;
+    const body = lifted.filter((e) => loads[e] && (loads[e].sets || loads[e].reps || loads[e].kg))
+      .map((e) => ({ exercise: e, sets: num(loads[e].sets), reps: num(loads[e].reps), weight_kg: num(loads[e].kg) }));
+    const ok = await onSubmit({ activity, start_time: localIso(start), duration_min: mins, kind, plan_day: planDay,
       distance_km: GPS.has(activity) || activity === 'Swim' ? num(distance) : null, avg_hr: num(avgHr), calories: num(calories),
-      exercises: picked });
-    if (ok) { setDuration(''); setDistance(''); setAvgHr(''); setCalories(''); setPicked([]); }
+      exercises: picked, loads: body });
+    if (ok) { setDuration(''); setDistance(''); setAvgHr(''); setCalories(''); setPicked([]); setLoads({}); }
   };
 
   return (
@@ -245,12 +268,15 @@ function ManualForm({ activity, busy, onSubmit }: { activity: Activity; busy: bo
           <Field label="Avg heart rate" value={avgHr} onChangeText={setAvgHr} keyboardType="number-pad" hint="Optional, bpm" />
           <Field label="Calories" value={calories} onChangeText={setCalories} keyboardType="number-pad" hint="Optional; we estimate it" />
         </Row>
-        {activity === 'Strength' && <>
+        {days.length > 0 && <>
           <Divider />
-          <P small muted style={{ marginBottom: 6 }}>Session</P>
+          <P small muted style={{ marginBottom: 6 }}>{plan.data?.plan ? `Day of your plan (${plan.data.plan.name})` : 'Session'}</P>
           <Row wrap gap={space.sm}>
-            {SPLITS.map((s) => <Chip key={s.key} label={s.label} on={split === s.key} onPress={() => setSplit(split === s.key ? null : s.key)} />)}
+            {days.map((d) => <Chip key={d.label} label={`${d.label}${plan.data?.today?.label === d.label ? ' · today' : ''}`}
+              on={planDay === d.label} onPress={() => choose(planDay === d.label ? null : d)} />)}
           </Row>
+          {!plan.data?.plan && <P small muted style={{ marginTop: 6, color: t.accentInk }} >
+            <P small style={{ color: t.accentInk, fontWeight: '600' }}>Make your own split</P> (upper/lower, full body, arms day…) from Today → weekly plan.</P>}
         </>}
       </Card>
       {options.length > 0 && (
@@ -261,6 +287,23 @@ function ManualForm({ activity, busy, onSubmit }: { activity: Activity; busy: bo
             {options.map((e) => <Chip key={e} label={e} on={picked.includes(e)}
               onPress={() => setPicked((p) => (p.includes(e) ? p.filter((x) => x !== e) : [...p, e]))} />)}
           </Row>
+        </Card>
+      )}
+      {lifted.length > 0 && (
+        <Card>
+          <H2>Sets, reps and kg</H2>
+          <P muted small style={{ marginBottom: space.sm }}>Optional. The Muscles tab uses them to track strength; without them each exercise counts as 3 sets.</P>
+          {lifted.map((e) => (
+            <Row key={e} gap={space.sm} style={{ marginBottom: 6 }}>
+              <P small style={{ flex: 1 }}>{e}</P>
+              {(['sets', 'reps', 'kg'] as const).map((k) => (
+                <TextInput key={k} value={loads[e]?.[k] ?? ''} onChangeText={(v) => setLoad(e, k, v)} placeholder={k === 'sets' ? '3 sets' : k === 'reps' ? '10 reps' : 'kg'}
+                  placeholderTextColor={t.muted} keyboardType={k === 'kg' ? 'decimal-pad' : 'number-pad'} accessibilityLabel={`${e} ${k}`}
+                  style={{ width: 62, borderWidth: 1, borderColor: t.border, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 7,
+                    color: t.text, backgroundColor: t.surface2, fontSize: 14, textAlign: 'center' }} />
+              ))}
+            </Row>
+          ))}
         </Card>
       )}
       {problem && <P style={{ color: t.criticalInk }}>{problem}</P>}

@@ -1,10 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
 import { View } from 'react-native';
 import { ProbBars, WeeklyBars } from '../../components/charts';
+import { StreakBadge } from '../../components/streak';
 import WorkoutRow from '../../components/WorkoutRow';
 import { Button, Card, EmptyState, ErrorState, H2, P, Pill, Row, Screen, Skeleton, Stat } from '../../components/ui';
-import { Alert, fmt, Profile, useFetch, WorkoutItem } from '../../lib/api';
+import { Alert, fmt, PlanWeek, Profile, Streak, todayIso, useFetch, WorkoutItem } from '../../lib/api';
 import { useFocusRefresh } from '../../lib/focus';
 import { useSession } from '../../lib/session';
 import { levelColor, space, useTheme } from '../../lib/theme';
@@ -15,9 +17,12 @@ export default function Today() {
   const prof = useFetch<Profile>('/api/me/profile');
   const ws = useFetch<WorkoutItem[]>('/api/me/workouts?limit=5');
   const alerts = useFetch<Alert[]>('/api/me/alerts');
+  const streak = useFetch<Streak>(`/api/me/streak?today=${todayIso()}`);
+  const plan = useFetch<PlanWeek>(`/api/me/plan?today=${todayIso()}`);
+  const refresh = useCallback(() => { prof.reload(); ws.reload(); alerts.reload(); streak.reload(); plan.reload(); },
+    [prof.reload, ws.reload, alerts.reload, streak.reload, plan.reload]);
   // Back on this tab (e.g. after saving a workout): show fresh numbers.
-  useFocusRefresh(useCallback(() => { prof.reload(); ws.reload(); alerts.reload(); }, [prof.reload, ws.reload, alerts.reload]));
-  const refresh = () => { prof.reload(); ws.reload(); alerts.reload(); };
+  useFocusRefresh(refresh);
   const p = prof.data;
   const first = account ? account.name.split(' ')[0] : null;
   const fresh = p != null && p.workouts_counted === 0;
@@ -35,6 +40,8 @@ export default function Today() {
               </View>
             </Card>
           )}
+          {streak.data && <Card onPress={() => router.push('/(tabs)/streak')}><StreakBadge s={streak.data} /></Card>}
+          {plan.data && <TodayPlan pw={plan.data} />}
           <Card>
             <Row gap={space.md}>
               <View style={{ width: 12, height: 40, borderRadius: 4, backgroundColor: levelColor(t, p.level.value) }} />
@@ -80,6 +87,11 @@ export default function Today() {
         </>
       )}
 
+      <Row gap={space.sm}>
+        <View style={{ flex: 1 }}><Button label="Insights" kind="secondary" icon="bulb-outline" onPress={() => router.push('/(tabs)/insights')} /></View>
+        <View style={{ flex: 1 }}><Button label="Routes" kind="secondary" icon="map-outline" onPress={() => router.push('/(tabs)/routes')} /></View>
+      </Row>
+
       <Card>
         <H2>Recent workouts</H2>
         {ws.error ? <P muted small>{ws.error}</P> : !ws.data ? <P muted>Loading…</P> : ws.data.length === 0
@@ -87,5 +99,32 @@ export default function Today() {
           : ws.data.map((w) => <WorkoutRow key={w.workout_id} w={w} />)}
       </Card>
     </Screen>
+  );
+}
+
+function TodayPlan({ pw }: { pw: PlanWeek }) {
+  const t = useTheme();
+  const day = pw.today;
+  if (!pw.plan || !day) {
+    return (
+      <Card onPress={() => router.push('/(tabs)/plan')}>
+        <H2 right={<Ionicons name="chevron-forward" size={16} color={t.muted} />}>Make a weekly plan</H2>
+        <P muted small>Push/pull/legs, upper/lower, full body, or your own split. Its rest days won't break your streak.</P>
+      </Card>
+    );
+  }
+  const rest = day.activity === 'Rest';
+  const done = pw.week.find((d) => d.today)?.done;
+  return (
+    <Card onPress={() => router.push('/(tabs)/plan')}>
+      <P muted small>Today's plan · {pw.plan.name} · {pw.done}/{pw.planned} this week</P>
+      <Row style={{ justifyContent: 'space-between', marginTop: 2 }}>
+        <P style={{ fontSize: 20, fontWeight: '700' }}>{rest ? 'Rest day' : day.label}</P>
+        {!rest && (done ? <Pill kind="good" label="Done" /> : <Ionicons name="chevron-forward" size={16} color={t.muted} />)}
+      </Row>
+      {!rest && day.focus.length > 0 && <P muted small>{day.focus.join(', ')}</P>}
+      {!rest && !done && <View style={{ marginTop: space.sm }}><Button label={`Record ${day.label}`} icon="add-circle-outline" onPress={() => router.push('/(tabs)/log')} /></View>}
+      {rest && <P muted small>Recover today. Your streak is safe.</P>}
+    </Card>
   );
 }
